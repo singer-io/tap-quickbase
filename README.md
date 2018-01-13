@@ -11,7 +11,7 @@ This tap:
 
     ```bash
     mkvirtualenv -p python3 tap-quickbase
-    pip install tap-quickbase
+    pip install git+https://github.com/flash716/tap-quickbase.git
     tap-quickbase --config config.json --discover
     tap-quickbase --config config.json --properties properties.json --state state.json
     ```
