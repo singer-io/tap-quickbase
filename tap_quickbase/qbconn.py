@@ -4,7 +4,7 @@ import re
 import requests
 from xml.etree import ElementTree
 
-COLUMN_NAME_TRANSLATION = re.compile(r"[^a-z0-9_$!#%&'()*+,-./:;<=>?@[\]^~]")
+COLUMN_NAME_TRANSLATION = re.compile(r"[^a-z0-9_ $!#%&'()*+,-./:;<=>?@[\]^~]")
 
 
 class QBConn:
@@ -89,7 +89,7 @@ class QBConn:
         remote_fields = schema.find('table').find('fields')
         fields = []
         for remote_field in remote_fields:
-            name = remote_field.find('label').text.lower().replace('"', "'").replace(' ', '_')
+            name = remote_field.find('label').text.lower().replace('"', "'")
             name = COLUMN_NAME_TRANSLATION.sub('', name)
             fields.append({
                 'id': remote_field.attrib['id'],
