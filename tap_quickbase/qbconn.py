@@ -1,15 +1,16 @@
 #!/usr/bin/python3
+from xml.etree import ElementTree
 import logging
 import re
 import requests
-from xml.etree import ElementTree
 
 COLUMN_NAME_TRANSLATION = re.compile(r"[^a-z0-9_ $!#%&'()*+,-./:;<=>?@[\]^~]")
 
 
 class QBConn:
     """
-    QBConn was borrowed heavily from pybase - https://github.com/QuickbaseAdmirer/Quickbase-Python-SDK
+    QBConn was borrowed heavily from pybase
+    https://github.com/QuickbaseAdmirer/Quickbase-Python-SDK
     """
     def __init__(self, url, appid, user_token=None, realm="", logger=None):
 
@@ -17,7 +18,9 @@ class QBConn:
         self.user_token = user_token
         self.appid = appid
         self.realm = realm  # This allows one QuickBase realm to proxy for another
-        self.error = 0  # Set after every API call. A non-zero value indicates an error. A negative value indicates an error with this library
+        # Set after every API call.
+        # A non-zero value indicates an error. A negative value indicates an error with this lib
+        self.error = 0
         self.logger = logger or logging.getLogger(__name__)
 
     def request(self, params, url_ext, headers=None):
@@ -36,7 +39,7 @@ class QBConn:
 
         resp = requests.get(url, params, headers=headers)
 
-        if re.match('^<\?xml version=', resp.content.decode("utf-8")) is None:
+        if re.match(r'^<\?xml version=', resp.content.decode("utf-8")) is None:
             print("No useful data received")
             self.error = -1
         else:
@@ -47,7 +50,8 @@ class QBConn:
     def query(self, table_id, query, headers=None):
         """
         Executes a query on tableID
-        Returns a list of dicts containing fieldid:value pairs. record ID will always be specified by the "rid" key
+        Returns a list of dicts containing fieldid:value pairs.
+        record ID will always be specified by the "rid" key
         """
         headers = headers or dict()
         params = dict(query)
