@@ -10,7 +10,7 @@ setup(name='tap-quickbase',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
       py_modules=['tap_quickbase'],
       install_requires=[
-          'singer-python==5.0.2',
+          'singer-python==5.0.4',
           'requests==2.18.4',
           'python-dateutil==2.6.1',
       ],
