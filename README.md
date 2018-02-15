@@ -285,4 +285,4 @@ new records each time the tap is invoked.
 
 ---
 
-Copyright &copy; 2017 Auptix
+Copyright &copy; 2018 Stitch
