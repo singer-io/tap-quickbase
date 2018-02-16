@@ -28,8 +28,9 @@ or
 ```bash
 $ git clone git@github.com:flash716/tap-quickbase.git
 $ cd tap-quickbase
-$ mkvirtualenv -p python tap-quickbase
-$ python install .
+$ mkvirtualenv -p python3 tap-quickbase
+$ cd tap-quickbase
+$ pip install .
 ```
 
 
@@ -117,7 +118,7 @@ description of each table. A source table directly corresponds to a Singer strea
       "metadata": [
         {
           "metadata": {
-            "id": "1"
+            "tap-quickbase.id": "1"
           },
           "breadcrumb": [
             "properties",
@@ -126,7 +127,7 @@ description of each table. A source table directly corresponds to a Singer strea
         },
         {
           "metadata": {
-            "id": "2"
+            "tap-quickbase.id": "2"
           },
           "breadcrumb": [
             "properties",
@@ -135,7 +136,7 @@ description of each table. A source table directly corresponds to a Singer strea
         },
         {
           "metadata": {
-            "id": "6"
+            "tap-quickbase.id": "6"
           },
           "breadcrumb": [
             "properties",
@@ -219,7 +220,7 @@ The stream's schema gets a top-level `selected` flag, as does its columns' schem
       "metadata": [
         {
           "metadata": {
-            "id": "1"
+            "tap-quickbase.id": "1"
           },
           "breadcrumb": [
             "properties",
@@ -228,7 +229,7 @@ The stream's schema gets a top-level `selected` flag, as does its columns' schem
         },
         {
           "metadata": {
-            "id": "2"
+            "tap-quickbase.id": "2"
           },
           "breadcrumb": [
             "properties",
@@ -237,7 +238,7 @@ The stream's schema gets a top-level `selected` flag, as does its columns' schem
         },
         {
           "metadata": {
-            "id": "6"
+            "tap-quickbase.id": "6"
           },
           "breadcrumb": [
             "properties",
