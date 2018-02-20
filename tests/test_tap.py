@@ -71,7 +71,7 @@ class TestDiscoverCatalog(unittest.TestCase):
         for meta in self.catalog.streams[0].metadata:
             if tuple(meta['breadcrumb']) == ("properties", "datecreated", ):
                 found_breadcrumb = True
-                self.assertEqual("1", meta['metadata']['id'])
+                self.assertEqual("1", meta['metadata']['tap-quickbase.id'])
         self.assertTrue(found_breadcrumb)
 
 

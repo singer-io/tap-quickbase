@@ -8,6 +8,7 @@ import re
 import dateutil.parser
 import singer
 from singer.catalog import Catalog, CatalogEntry
+import singer.utils as singer_utils
 import singer.metadata as singer_metadata
 import singer.metrics as metrics
 from singer.schema import Schema
@@ -22,6 +23,7 @@ NUM_RECORDS = 500
 
 LOGGER = singer.get_logger()
 
+REPLICATION_KEY = 'date modified'
 
 def build_state(raw_state, catalog):
     LOGGER.info(
@@ -31,13 +33,13 @@ def build_state(raw_state, catalog):
     state = {}
 
     for catalog_entry in catalog.streams:
-        start = singer.get_bookmark(raw_state, catalog_entry.tap_stream_id, 'last_record')
+        start = singer.get_bookmark(raw_state, catalog_entry.tap_stream_id, REPLICATION_KEY)
         if not start:
             start = CONFIG.get(
                 'start_date',
                 datetime.datetime.utcfromtimestamp(0).strftime(DATETIME_FMT)
             )
-        state = singer.write_bookmark(state, catalog_entry.tap_stream_id, 'last_record', start)
+        state = singer.write_bookmark(state, catalog_entry.tap_stream_id, REPLICATION_KEY, start)
 
     return state
 
@@ -102,7 +104,7 @@ def discover_catalog(conn):
 
             metadata.append({
                 'metadata': {
-                    'id': field.get('id')
+                    'tap-quickbase.id': field.get('id')
                 },
                 'breadcrumb': [
                     'properties',
@@ -117,6 +119,8 @@ def discover_catalog(conn):
             stream=stream,
             tap_stream_id=stream,
             key_properties=['rid'],
+            replication_key=REPLICATION_KEY,
+            replication_method = 'INCREMENTAL',
             schema=schema,
             metadata=metadata
         )
@@ -179,7 +183,7 @@ def build_field_lists(properties, metadata):
     field_list = []
     ids_to_names = {}  # used to translate the column ids to names in returned results
     for name, prop in iter(properties.items()):
-        field_id = singer_metadata.get(metadata, ('properties', name, ), 'id')
+        field_id = singer_metadata.get(metadata, ('properties', name, ), 'tap-quickbase.id')
         if field_id  and (prop.selected == 'true' or prop.inclusion == 'automatic'):
             field_list.append(field_id)
             ids_to_names[field_id] = name
@@ -245,13 +249,13 @@ def get_start(table_id):
     """
     default to the CONFIG's start_date if the table does not have an entry in STATE.
     """
-    start = singer.get_bookmark(STATE, table_id, 'last_record')
+    start = singer.get_bookmark(STATE, table_id, REPLICATION_KEY)
     if not start:
         start = CONFIG.get(
             'start_date',
             datetime.datetime.utcfromtimestamp(0).strftime(DATETIME_FMT)
         )
-        singer.write_bookmark(STATE, table_id, 'last_record', start)
+        singer.write_bookmark(STATE, table_id, REPLICATION_KEY, start)
     return start
 
 
@@ -264,13 +268,6 @@ def sync_table(conn, catalog_entry, state):
     if not entity:
         return
 
-    # tell singer about the structure of this schema
-    yield singer.SchemaMessage(
-        stream=entity,
-        schema=catalog_entry.schema.to_dict(),
-        key_properties=catalog_entry.key_properties
-    )
-
     start = get_start(entity)
     formatted_start = dateutil.parser.parse(start).strftime(DATETIME_FMT)
     params = {
@@ -281,36 +278,36 @@ def sync_table(conn, catalog_entry, state):
         counter.tags['database'] = catalog_entry.database
         counter.tags['table'] = catalog_entry.table
 
+        extraction_time = singer_utils.now()
         for rows_saved, row in enumerate(gen_request(conn, catalog_entry, params)):
             counter.increment()
             transform_data(row, catalog_entry.schema)
+
             yield singer.RecordMessage(
                 stream=catalog_entry.stream,
-                record=row
+                record=row,
+                time_extracted=extraction_time
             )
+
             state = singer.write_bookmark(
                 state,
                 catalog_entry.tap_stream_id,
-                'last_record',
-                row['datemodified']
+                REPLICATION_KEY,
+                row[REPLICATION_KEY]
             )
-            if rows_saved % 1000 == 0:
+            if (rows_saved+1) % 1000 == 0:
                 yield singer.StateMessage(value=copy.deepcopy(state))
-
-    yield singer.StateMessage(value=copy.deepcopy(state))
 
 
 def generate_messages(conn, catalog, state):
     for catalog_entry in catalog.streams:
 
-        # Emit a state message to indicate that we've started this stream
-        yield singer.StateMessage(value=copy.deepcopy(state))
-
         # Emit a SCHEMA message before we sync any records
         yield singer.SchemaMessage(
             stream=catalog_entry.stream,
             schema=catalog_entry.schema.to_dict(),
-            key_properties=catalog_entry.key_properties
+            key_properties=catalog_entry.key_properties,
+            bookmark_properties=[REPLICATION_KEY]
         )
 
         # Emit a RECORD message for each record in the result set
