@@ -100,5 +100,6 @@ class QBConn:
                 'name': name,
                 'type': remote_field.attrib['field_type'],
                 'base_type': remote_field.attrib['base_type'],
+                'parent_field_id': remote_field.find('parentFieldID'),
             })
         return fields
