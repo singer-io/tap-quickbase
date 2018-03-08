@@ -95,11 +95,16 @@ class QBConn:
         for remote_field in remote_fields:
             name = remote_field.find('label').text.lower().replace('"', "'")
             name = COLUMN_NAME_TRANSLATION.sub('', name)
+            parent_field_id_element = remote_field.find('parentFieldID')
+            if parent_field_id_element is not None:
+                parent_field_id = parent_field_id_element.text
+            else:
+                parent_field_id = ""
             fields.append({
                 'id': remote_field.attrib['id'],
                 'name': name,
                 'type': remote_field.attrib['field_type'],
                 'base_type': remote_field.attrib['base_type'],
-                'parent_field_id': remote_field.find('parentFieldID'),
+                'parent_field_id': parent_field_id,
             })
         return fields

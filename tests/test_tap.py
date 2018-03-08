@@ -76,7 +76,7 @@ class TestDiscoverCatalog(unittest.TestCase):
 
     def test_child_field(self):
         self.assertTrue(
-            "text_field - child_text_field" in self.catalog.streams[0].schema.properties
+            tap_quickbase.format_child_field_name("text_field", "child_text_field") in self.catalog.streams[0].schema.properties
         )
 
 

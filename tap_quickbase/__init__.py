@@ -20,10 +20,12 @@ DATETIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
 CONFIG = {}
 STATE = {}
 NUM_RECORDS = 500
-
 LOGGER = singer.get_logger()
-
 REPLICATION_KEY = 'date modified'
+
+
+def format_child_field_name(parent_name, child_name):
+    return "{} -> {}".format(parent_name, child_name)
 
 def build_state(raw_state, catalog):
     LOGGER.info(
@@ -81,7 +83,7 @@ def discover_catalog(conn):
             # if we have a parentFieldID grab the name of that field and add it to the field name to assure uniqueness
             # since the fields are sorted by id we will have already processed the parent field
             if field.get('parent_field_id'):
-                field_name = "{} - {}".format(table_fields_lookup.get(field.get('parent_field_id')), field_name)
+                field_name = format_child_field_name(table_fields_lookup.get(field.get('parent_field_id')), field_name)
 
             # https://help.quickbase.com/user-assistance/field_types.html
             if field.get('base_type') == 'bool':
