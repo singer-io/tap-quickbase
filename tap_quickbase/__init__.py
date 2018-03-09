@@ -25,7 +25,7 @@ REPLICATION_KEY = 'date modified'
 
 
 def format_child_field_name(parent_name, child_name):
-    return "{} -> {}".format(parent_name, child_name)
+    return "{}.{}".format(parent_name, child_name)
 
 def build_state(raw_state, catalog):
     LOGGER.info(
