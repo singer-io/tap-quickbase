@@ -74,6 +74,11 @@ class TestDiscoverCatalog(unittest.TestCase):
                 self.assertEqual("1", meta['metadata']['tap-quickbase.id'])
         self.assertTrue(found_breadcrumb)
 
+    def test_child_field(self):
+        self.assertTrue(
+            tap_quickbase.format_child_field_name("text_field", "child_text_field") in self.catalog.streams[0].schema.properties
+        )
+
 
 class TestBuildFieldList(unittest.TestCase):
 

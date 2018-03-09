@@ -20,10 +20,12 @@ DATETIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
 CONFIG = {}
 STATE = {}
 NUM_RECORDS = 500
-
 LOGGER = singer.get_logger()
-
 REPLICATION_KEY = 'date modified'
+
+
+def format_child_field_name(parent_name, child_name):
+    return "{} -> {}".format(parent_name, child_name)
 
 def build_state(raw_state, catalog):
     LOGGER.info(
@@ -70,9 +72,18 @@ def discover_catalog(conn):
         )
         metadata = []
 
-        for field in conn.get_fields(table.get('id')):
+        table_fields = conn.get_fields(table.get('id'))
+        table_fields.sort(key=lambda field: int(field.get('id')))
+        table_fields_lookup = {}
+        for field in table_fields:
             field_type = ['null']
             field_format = None
+            field_name = field.get('name')
+
+            # if we have a parentFieldID grab the name of that field and add it to the field name to assure uniqueness
+            # since the fields are sorted by id we will have already processed the parent field
+            if field.get('parent_field_id'):
+                field_name = format_child_field_name(table_fields_lookup.get(field.get('parent_field_id')), field_name)
 
             # https://help.quickbase.com/user-assistance/field_types.html
             if field.get('base_type') == 'bool':
@@ -100,7 +111,7 @@ def discover_catalog(conn):
             )
             if field_format is not None:
                 property_schema.format = field_format
-            schema.properties[field.get('name')] = property_schema
+            schema.properties[field_name] = property_schema
 
             metadata.append({
                 'metadata': {
@@ -108,9 +119,11 @@ def discover_catalog(conn):
                 },
                 'breadcrumb': [
                     'properties',
-                    field.get('name')
+                    field_name
                 ]
             })
+
+            table_fields_lookup[field.get('id')] = field_name
 
         entry = CatalogEntry(
             database=conn.appid,
