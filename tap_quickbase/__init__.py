@@ -23,6 +23,7 @@ NUM_RECORDS = 500
 LOGGER = singer.get_logger()
 REPLICATION_KEY = 'date modified'
 
+DEBUG_FLAG = False
 
 def format_child_field_name(parent_name, child_name):
     return "{} -> {}".format(parent_name, child_name)
@@ -75,6 +76,7 @@ def discover_catalog(conn):
         table_fields = conn.get_fields(table.get('id'))
         table_fields.sort(key=lambda field: int(field.get('id')))
         table_fields_lookup = {}
+        unique_meta_keys = {}
         for field in table_fields:
             field_type = ['null']
             field_format = None
@@ -112,6 +114,12 @@ def discover_catalog(conn):
             if field_format is not None:
                 property_schema.format = field_format
             schema.properties[field_name] = property_schema
+            if DEBUG_FLAG:
+                if field_name in unique_meta_keys:
+                    unique_meta_keys[field_name].append(field.get('id'))
+                else:
+                    unique_meta_keys[field_name] = [field.get('id')]
+
 
             metadata.append({
                 'metadata': {
@@ -124,6 +132,10 @@ def discover_catalog(conn):
             })
 
             table_fields_lookup[field.get('id')] = field_name
+        if DEBUG_FLAG:
+            for k,v in unique_meta_keys.items():
+                if len(unique_meta_keys[k]) > 1:
+                    LOGGER.info('MULTIPLE META KEYS for: ' + k + '  =  ' + str(unique_meta_keys[k]))
 
         entry = CatalogEntry(
             database=conn.appid,
