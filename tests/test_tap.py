@@ -38,29 +38,29 @@ class TestDiscoverCatalog(unittest.TestCase):
     def test_properties_timestamp(self):
         self.assertEqual(
             "string",
-            self.catalog.streams[0].schema.properties['datecreated'].type[1]
+            self.catalog.streams[0].schema.properties['1 - datecreated'].type[1]
         )
         self.assertEqual(
             "date-time",
-            self.catalog.streams[0].schema.properties['datecreated'].format
+            self.catalog.streams[0].schema.properties['1 - datecreated'].format
         )
 
     def test_properties_string(self):
         self.assertEqual(
             "string",
-            self.catalog.streams[0].schema.properties['text_field'].type[1]
+            self.catalog.streams[0].schema.properties['3 - text_field'].type[1]
         )
 
     def test_properties_boolean(self):
         self.assertEqual(
             "boolean",
-            self.catalog.streams[0].schema.properties['boolean_field'].type[1]
+            self.catalog.streams[0].schema.properties['4 - boolean_field'].type[1]
         )
 
     def test_properties_float(self):
         self.assertEqual(
             "number",
-            self.catalog.streams[0].schema.properties['float_field'].type[1]
+            self.catalog.streams[0].schema.properties['5 - float_field'].type[1]
         )
 
     def test_metadata_length(self):
@@ -69,14 +69,14 @@ class TestDiscoverCatalog(unittest.TestCase):
     def test_metadata_datecreated_id(self):
         found_breadcrumb = False
         for meta in self.catalog.streams[0].metadata:
-            if tuple(meta['breadcrumb']) == ("properties", "datecreated", ):
+            if tuple(meta['breadcrumb']) == ("properties", "1 - datecreated", ):
                 found_breadcrumb = True
                 self.assertEqual("1", meta['metadata']['tap-quickbase.id'])
         self.assertTrue(found_breadcrumb)
 
     def test_child_field(self):
         self.assertTrue(
-            tap_quickbase.format_child_field_name("text_field", "child_text_field") in self.catalog.streams[0].schema.properties
+            tap_quickbase.format_child_field_name("3 - text_field", "6 - child_text_field") in self.catalog.streams[0].schema.properties
         )
 
 
@@ -93,10 +93,10 @@ class TestBuildFieldList(unittest.TestCase):
         # by default only datemodified is included as a query field
         field_list, ids_to_names = tap_quickbase.build_field_lists(self.properties, self.metadata)
         self.assertEqual(1, len(field_list))
-        self.assertEqual('datemodified', ids_to_names['2'])
+        self.assertEqual('2 - datemodified', ids_to_names['2'])
 
     def test_build_field_list_include_datecreated(self):
-        self.properties['datecreated'].selected = 'true'
+        self.properties['1 - datecreated'].selected = 'true'
         field_list, ids_to_names = tap_quickbase.build_field_lists(self.properties, self.metadata)
         self.assertEqual(2, len(field_list))
-        self.assertEqual('datecreated', ids_to_names['1'])
+        self.assertEqual('1 - datecreated', ids_to_names['1'])
