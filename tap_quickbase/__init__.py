@@ -25,6 +25,9 @@ REPLICATION_KEY = 'date modified'
 
 DEBUG_FLAG = False
 
+def format_field_name(field):
+    return "{} - {}".format(field.get('id'), field.get('name'))
+
 def format_child_field_name(parent_name, child_name):
     return "{}.{}".format(parent_name, child_name)
 
@@ -80,7 +83,7 @@ def discover_catalog(conn):
         for field in table_fields:
             field_type = ['null']
             field_format = None
-            field_name = field.get('name')
+            field_name = format_field_name(field)
 
             # if we have a parentFieldID grab the name of that field and add it to the field name to assure uniqueness
             # since the fields are sorted by id we will have already processed the parent field
