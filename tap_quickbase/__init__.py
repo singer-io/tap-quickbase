@@ -30,7 +30,7 @@ def format_child_field_name(parent_name, child_name):
 
 def build_state(raw_state, catalog):
     LOGGER.info(
-        'Building State from raw state {} and catalog {}'.format(raw_state, catalog.to_dict())
+        'Building State from raw state {}'.format(raw_state)
     )
 
     state = {}
@@ -47,6 +47,79 @@ def build_state(raw_state, catalog):
     return state
 
 
+
+def populate_schema_leaf(schema, field_info, id_num, breadcrumb, metadata):
+
+    #add metadata
+    inclusion = 'available' if id_num != '2' else 'automatic'
+    metadata.append(
+        {
+            'metadata': {
+                'tap-quickbase.id': id_num,
+                'inclusion': inclusion
+            },
+            'breadcrumb': [i for i in breadcrumb]
+        }
+    )
+
+    #populate schema
+    field_type = ['null']
+    field_format = None
+
+    # https://help.quickbase.com/user-assistance/field_types.html
+    if field_info.get('base_type') == 'bool':
+        field_type.append('boolean')
+    elif field_info.get('base_type') == 'float':
+        field_type.append('number')
+    elif field_info.get('base_type') == 'int64':
+        if field_info.get('type') in ('timestamp', 'date'):
+            field_type.append('string')
+            field_format = 'date-time'
+        else:
+            # `timeofday` comes out of the API as an integer for how many milliseconds
+            #       through the day, 900000 would be 12:15am
+            # `duration` comes out as an integer for how many milliseconds the duration is,
+            #       1000 would be 1 second
+            # let's just pass these as an integer
+            field_type.append('integer')
+    else:
+        field_type.append('string')
+
+    schema.type = field_type
+    if field_format is not None:
+        schema.format = field_format
+
+def populate_schema_node(schema, field_info, id_field_map, breadcrumb, metadata):
+
+    # add metadata
+    metadata.append(
+        {
+            'metadata': {
+                'inclusion': 'available'
+            },
+            'breadcrumb': [i for i in breadcrumb]
+        }
+    )
+
+    #populate schema
+    schema.type = ['null','object']
+    schema.properties = {}
+    for id_num in field_info.get('composite_fields'):
+        child_field_info = id_field_map[id_num]
+        breadcrumb.extend(['properties',child_field_info.get('name')])
+
+        child_schema = Schema()
+        if child_field_info.get('composite_fields'):
+            populate_schema_node(child_schema, child_field_info, id_field_map, breadcrumb, metadata)
+        else:
+            populate_schema_leaf(child_schema, child_field_info, id_num, breadcrumb, metadata)
+
+        schema.properties[child_field_info.get('name')] = child_schema
+
+        # remove 'properties' and 'child_field_name' from breadcrumb
+        breadcrumb.pop()
+        breadcrumb.pop()
+
 def discover_catalog(conn):
     """Returns a Catalog describing the table structure of the target database"""
     entries = []
@@ -62,80 +135,44 @@ def discover_catalog(conn):
 
         # by default we will ALWAYS have 'rid' as an automatically included primary key field.
         schema = Schema(
-            type='object',
-            additionalProperties=False,
-            properties={
-                'rid': Schema(
-                    type=['string'],
-                    inclusion='automatic',
-                )
-            }
+            type=['null','object'],
+            additionalProperties=False
         )
-        metadata = []
-
-        table_fields = conn.get_fields(table.get('id'))
-        table_fields.sort(key=lambda field: int(field.get('id')))
-        table_fields_lookup = {}
-        unique_meta_keys = {}
-        for field in table_fields:
-            field_type = ['null']
-            field_format = None
-            field_name = field.get('name')
-
-            # if we have a parentFieldID grab the name of that field and add it to the field name to assure uniqueness
-            # since the fields are sorted by id we will have already processed the parent field
-            if field.get('parent_field_id'):
-                field_name = format_child_field_name(table_fields_lookup.get(field.get('parent_field_id')), field_name)
-
-            # https://help.quickbase.com/user-assistance/field_types.html
-            if field.get('base_type') == 'bool':
-                field_type.append('boolean')
-            elif field.get('base_type') == 'float':
-                field_type.append('number')
-            elif field.get('base_type') == 'int64':
-                if field.get('type') in ('timestamp', 'date'):
-                    field_type.append('string')
-                    field_format = 'date-time'
-                else:
-                    # `timeofday` comes out of the API as an integer for how many milliseconds
-                    #       through the day, 900000 would be 12:15am
-                    # `duration` comes out as an integer for how many milliseconds the duration is,
-                    #       1000 would be 1 second
-                    # let's just pass these as an integer
-                    field_type.append('integer')
-
-            else:
-                field_type.append('string')
-
-            property_schema = Schema(
-                type=field_type,
-                inclusion='available' if field.get('id') != '2' else 'automatic',
+        schema.properties = {
+            'rid': Schema(
+                type=['string']
             )
-            if field_format is not None:
-                property_schema.format = field_format
-            schema.properties[field_name] = property_schema
-            if DEBUG_FLAG:
-                if field_name in unique_meta_keys:
-                    unique_meta_keys[field_name].append(field.get('id'))
-                else:
-                    unique_meta_keys[field_name] = [field.get('id')]
-
-
-            metadata.append({
+        }
+        metadata = [
+            {
                 'metadata': {
-                    'tap-quickbase.id': field.get('id')
+                    'inclusion': 'automatic'
                 },
-                'breadcrumb': [
-                    'properties',
-                    field_name
-                ]
-            })
+                'breadcrumb': ['properties','rid']
+            }
+        ]
 
-            table_fields_lookup[field.get('id')] = field_name
-        if DEBUG_FLAG:
-            for k,v in unique_meta_keys.items():
-                if len(unique_meta_keys[k]) > 1:
-                    LOGGER.info('MULTIPLE META KEYS for: ' + k + '  =  ' + str(unique_meta_keys[k]))
+        # build hierarchial schema
+        id_to_fields = conn.get_fields(table.get('id'))
+        for id_num,field_info in id_to_fields.items():
+
+            breadcrumb = ['properties', field_info.get('name')]
+
+            # if this field has a parent, it will be added by the parent
+            if field_info.get('parent_field_id'):
+                continue
+
+            # if this field has children, add them
+            elif field_info.get('composite_fields'):
+                node_schema = Schema()
+                populate_schema_node(node_schema, field_info, id_to_fields, breadcrumb, metadata)
+                schema.properties[field_info.get('name')] = node_schema
+
+            #otherwise, add field
+            else:
+                leaf_schema = Schema()
+                populate_schema_leaf(leaf_schema, field_info, id_num, breadcrumb, metadata)
+                schema.properties[field_info.get('name')] = leaf_schema
 
         entry = CatalogEntry(
             database=conn.appid,
@@ -199,19 +236,30 @@ def request(conn, table_id, query_params):
         headers['User-Agent'] = CONFIG['user_agent']
     return conn.query(table_id, query_params, headers=headers)
 
-
-def build_field_lists(properties, metadata):
+def build_field_lists(schema, metadata, breadcrumb):
     """
     Use the schema to build a field list for the query and a translation table for the returned data
     :return:
     """
     field_list = []
     ids_to_names = {}  # used to translate the column ids to names in returned results
-    for name, prop in iter(properties.items()):
-        field_id = singer_metadata.get(metadata, ('properties', name, ), 'tap-quickbase.id')
-        if field_id  and (prop.selected == 'true' or prop.inclusion == 'automatic'):
+    for name, sub_schema in schema.properties.items():
+        breadcrumb.extend(['properties', name])
+
+        field_id = singer_metadata.get(metadata, tuple(breadcrumb), 'tap-quickbase.id')
+        if field_id and (sub_schema.selected or sub_schema.inclusion == 'automatic'):
             field_list.append(field_id)
             ids_to_names[field_id] = name
+        elif sub_schema.properties and (sub_schema.selected or sub_schema.inclusion == 'automatic'):
+            for name, child_schema in sub_schema.properties.items():
+                child_schema.selected = True
+            sub_field_list, sub_ids_to_names = build_field_lists(sub_schema, metadata, breadcrumb)
+            field_list.extend(sub_field_list)
+            ids_to_names.update(sub_ids_to_names)
+
+        breadcrumb.pop()
+        breadcrumb.pop()
+
     return (field_list, ids_to_names, )
 
 
@@ -229,7 +277,7 @@ def gen_request(conn, stream, params=None):
     if not properties:
         return
 
-    field_list, ids_to_names = build_field_lists(properties, metadata)
+    field_list, ids_to_names = build_field_lists(stream.schema, metadata, [])
     if not field_list:
         return
 
@@ -326,6 +374,9 @@ def sync_table(conn, catalog_entry, state):
 
 def generate_messages(conn, catalog, state):
     for catalog_entry in catalog.streams:
+
+        if not catalog_entry.is_selected():
+            continue
 
         # Emit a SCHEMA message before we sync any records
         yield singer.SchemaMessage(

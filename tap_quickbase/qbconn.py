@@ -91,20 +91,49 @@ class QBConn:
         params = {'act': 'API_GetSchema'}
         schema = self.request(params, table_id)
         remote_fields = schema.find('table').find('fields')
-        fields = []
+
+        id_to_field = {}
+        field_to_ids = {}
         for remote_field in remote_fields:
             name = remote_field.find('label').text.lower().replace('"', "'")
             name = COLUMN_NAME_TRANSLATION.sub('', name)
+            id_num =  remote_field.attrib['id']
+            if field_to_ids.get(name):
+                field_to_ids[name].append(id_num)
+            else:
+                field_to_ids[name] = [id_num]
+
+            # pull out composite field info (child fields)
+            composite_fields = []
+            composite_fields_element = remote_field.find('compositeFields')
+            if composite_fields_element:
+                for composite_field_element in composite_fields_element:
+                    composite_fields.append(composite_field_element.attrib['id'])
+
+            # pull out parent field info (useful to know if field is a child)
             parent_field_id_element = remote_field.find('parentFieldID')
             if parent_field_id_element is not None:
                 parent_field_id = parent_field_id_element.text
             else:
                 parent_field_id = ""
-            fields.append({
-                'id': remote_field.attrib['id'],
+
+            field_info = {
+                'id': id_num,
                 'name': name,
                 'type': remote_field.attrib['field_type'],
                 'base_type': remote_field.attrib['base_type'],
                 'parent_field_id': parent_field_id,
-            })
-        return fields
+                'composite_fields': composite_fields
+            }
+
+            id_to_field[id_num] = field_info
+
+        # handle duplicate field names by appending id num to end of name
+        for field_name, field_id_list in field_to_ids.items():
+            field_id_list = [i for i in field_id_list if not id_to_field[i].get('parent_field_id')]
+            if len(field_id_list) > 1:
+                for dup_id in field_id_list:
+                    dup_field_info = id_to_field[dup_id]
+                    dup_field_info['name'] = dup_field_info['name'] + '_' + dup_id
+
+        return id_to_field
