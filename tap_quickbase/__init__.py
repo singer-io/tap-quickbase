@@ -49,7 +49,10 @@ def build_state(raw_state, catalog):
 
 
 def populate_schema_leaf(schema, field_info, id_num, breadcrumb, metadata):
-
+    """
+    Populates a leaf in the schema.  A leaf corresponds to a JSON boolean,
+    number, or string field
+    """
     #add metadata
     inclusion = 'available' if id_num != '2' else 'automatic'
     metadata.append(
@@ -65,7 +68,6 @@ def populate_schema_leaf(schema, field_info, id_num, breadcrumb, metadata):
     #populate schema
     field_type = ['null']
     field_format = None
-
     # https://help.quickbase.com/user-assistance/field_types.html
     if field_info.get('base_type') == 'bool':
         field_type.append('boolean')
@@ -90,7 +92,10 @@ def populate_schema_leaf(schema, field_info, id_num, breadcrumb, metadata):
         schema.format = field_format
 
 def populate_schema_node(schema, field_info, id_field_map, breadcrumb, metadata):
-
+    """
+    Populates a node in the schema.  A node corresponds to a JSON object, which has
+    properties (children)
+    """
     # add metadata
     metadata.append(
         {
@@ -330,7 +335,6 @@ def get_start(table_id):
         )
         singer.write_bookmark(STATE, table_id, REPLICATION_KEY, start)
     return start
-
 
 def sync_table(conn, catalog_entry, state):
     LOGGER.info("Beginning sync for {}.{} table.".format(
