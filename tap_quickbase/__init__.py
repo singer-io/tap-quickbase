@@ -19,7 +19,7 @@ REQUIRED_CONFIG_KEYS = ['qb_url', 'qb_appid', 'qb_user_token', 'start_date']
 DATETIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
 CONFIG = {}
 STATE = {}
-NUM_RECORDS = 500
+NUM_RECORDS = 100
 LOGGER = singer.get_logger()
 REPLICATION_KEY = 'date modified'
 
