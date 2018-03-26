@@ -247,27 +247,46 @@ def build_field_lists(schema, metadata, breadcrumb):
     :return:
     """
     field_list = []
-    ids_to_names = {}  # used to translate the column ids to names in returned results
+    ids_to_breadcrumbs = {}
     for name, sub_schema in schema.properties.items():
         breadcrumb.extend(['properties', name])
 
         field_id = singer_metadata.get(metadata, tuple(breadcrumb), 'tap-quickbase.id')
         if field_id and (sub_schema.selected or sub_schema.inclusion == 'automatic'):
             field_list.append(field_id)
-            ids_to_names[field_id] = name
+            ids_to_breadcrumbs[field_id] = [i for i in breadcrumb]
         elif sub_schema.properties and (sub_schema.selected or sub_schema.inclusion == 'automatic'):
             for name, child_schema in sub_schema.properties.items():
                 child_schema.selected = True
-            sub_field_list, sub_ids_to_names = build_field_lists(sub_schema, metadata, breadcrumb)
+            sub_field_list, sub_ids_to_breadcrumbs = build_field_lists(sub_schema, metadata, breadcrumb)
             field_list.extend(sub_field_list)
-            ids_to_names.update(sub_ids_to_names)
+            ids_to_breadcrumbs.update(sub_ids_to_breadcrumbs)
 
         breadcrumb.pop()
         breadcrumb.pop()
 
-    return (field_list, ids_to_names, )
+    return (field_list, ids_to_breadcrumbs)
 
 
+def build_record(row, ids_to_breadcrumbs):
+    record = {}
+    for field_id, field_value in row.items():
+        if field_id=='rid':
+            record['rid'] = field_value
+        else:
+            breadcrumb = ids_to_breadcrumbs[field_id]
+            insert_value_at_breadcrumb(breadcrumb, field_value, record)
+    return record
+
+def insert_value_at_breadcrumb(breadcrumb, value, record):
+    if len(breadcrumb) == 2:
+        record[breadcrumb[1]] = value
+    else:
+        if record.get(breadcrumb[1]):
+            insert_value_at_breadcrumb(breadcrumb[2:], value, record[breadcrumb[1]])
+        else:
+            record[breadcrumb[1]] = {}
+            insert_value_at_breadcrumb(breadcrumb[2:], value, record[breadcrumb[1]])
 
 def gen_request(conn, stream, params=None):
     """
@@ -282,7 +301,7 @@ def gen_request(conn, stream, params=None):
     if not properties:
         return
 
-    field_list, ids_to_names = build_field_lists(stream.schema, metadata, [])
+    field_list, ids_to_breadcrumbs = build_field_lists(stream.schema, metadata, [])
     if not field_list:
         return
 
@@ -310,12 +329,7 @@ def gen_request(conn, stream, params=None):
         for res in results:
             start = res['2']  # update start to this record's updatedate for next page of query
             # translate column ids to column names
-            new_res = {}
-            for field_id, field_value in iter(res.items()):
-                if field_id in ids_to_names:
-                    new_res[ids_to_names[field_id]] = field_value
-                else:
-                    new_res[field_id] = field_value
+            new_res = build_record(res, ids_to_breadcrumbs)
             yield new_res
 
         # if we got less than the max number of records then we're at the end and can break
@@ -358,11 +372,11 @@ def sync_table(conn, catalog_entry, state):
         extraction_time = singer_utils.now()
         for rows_saved, row in enumerate(gen_request(conn, catalog_entry, params)):
             counter.increment()
-            transform_data(row, catalog_entry.schema)
+            rec = singer.transform(row, catalog_entry.schema.to_dict(), singer.UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING)
 
             yield singer.RecordMessage(
                 stream=catalog_entry.stream,
-                record=row,
+                record=rec,
                 time_extracted=extraction_time
             )
 
