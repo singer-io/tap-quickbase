@@ -28,6 +28,10 @@ DEBUG_FLAG = False
 def format_child_field_name(parent_name, child_name):
     return "{}.{}".format(parent_name, child_name)
 
+def format_epoch_milliseconds(epoch_timestamp):
+    epoch_sec = int(epoch_timestamp) / 1000.0
+    return datetime.datetime.utcfromtimestamp(epoch_sec).strftime(DATETIME_FMT)
+
 def build_state(raw_state, catalog):
     LOGGER.info(
         'Building State from raw state {}'.format(raw_state)
@@ -216,9 +220,7 @@ def transform_data(data, schema):
             if field_format == 'date-time':
                 try:
                     # convert epoch timestamps to date strings
-                    data[field_name] = datetime.datetime.utcfromtimestamp(
-                        int(field_value) / 1000.0
-                    ).strftime(DATETIME_FMT)
+                    data[field_name] = format_epoch_milliseconds(field_value)
                 except (ValueError, TypeError):
                     data[field_name] = None
 
@@ -327,7 +329,7 @@ def gen_request(conn, stream, params=None):
 
         results = request(conn, table_id, query_params)
         for res in results:
-            start = res['2']  # update start to this record's updatedate for next page of query
+            start = format_epoch_milliseconds(res['2'])  # update start to this record's updatedate for next page of query
             # translate column ids to column names
             new_res = build_record(res, ids_to_breadcrumbs)
             yield new_res
@@ -337,17 +339,17 @@ def gen_request(conn, stream, params=None):
             break
 
 
-def get_start(table_id):
+def get_start(table_id, state):
     """
     default to the CONFIG's start_date if the table does not have an entry in STATE.
     """
-    start = singer.get_bookmark(STATE, table_id, REPLICATION_KEY)
+    start = singer.get_bookmark(state, table_id, REPLICATION_KEY)
     if not start:
         start = CONFIG.get(
             'start_date',
             datetime.datetime.utcfromtimestamp(0).strftime(DATETIME_FMT)
         )
-        singer.write_bookmark(STATE, table_id, REPLICATION_KEY, start)
+        singer.write_bookmark(state, table_id, REPLICATION_KEY, start)
     return start
 
 def sync_table(conn, catalog_entry, state):
@@ -359,7 +361,7 @@ def sync_table(conn, catalog_entry, state):
     if not entity:
         return
 
-    start = get_start(entity)
+    start = get_start(entity, state)
     formatted_start = dateutil.parser.parse(start).strftime(DATETIME_FMT)
     params = {
         'start': formatted_start,
