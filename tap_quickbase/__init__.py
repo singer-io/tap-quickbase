@@ -386,7 +386,7 @@ def sync_table(conn, catalog_entry, state):
                 state,
                 catalog_entry.tap_stream_id,
                 REPLICATION_KEY,
-                row[REPLICATION_KEY]
+                format_epoch_milliseconds(row[REPLICATION_KEY])
             )
             if (rows_saved+1) % 1000 == 0:
                 yield singer.StateMessage(value=copy.deepcopy(state))
