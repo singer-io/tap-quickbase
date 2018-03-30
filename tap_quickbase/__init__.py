@@ -269,6 +269,17 @@ def build_field_lists(schema, metadata, breadcrumb):
 
     return (field_list, ids_to_breadcrumbs)
 
+def transform_bools(record, schema):
+    for field_prop, sub_schema in schema['properties'].items():
+        field_type = sub_schema.get('type')
+        if not field_type:
+            continue
+        if 'boolean' in field_type:
+            record[field_prop] = 'false' if record.get(field_prop)=='0' else 'true'
+        if 'object' in field_type:
+            record[field_prop] = transform_bools(record[field_prop], sub_schema)
+    return record
+
 
 def build_record(row, ids_to_breadcrumbs):
     record = {}
@@ -374,7 +385,8 @@ def sync_table(conn, catalog_entry, state):
         extraction_time = singer_utils.now()
         for rows_saved, row in enumerate(gen_request(conn, catalog_entry, params)):
             counter.increment()
-            rec = singer.transform(row, catalog_entry.schema.to_dict(), singer.UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING)
+            rec = transform_bools(row, catalog_entry.schema.to_dict())
+            rec = singer.transform(rec, catalog_entry.schema.to_dict(), singer.UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING)
 
             yield singer.RecordMessage(
                 stream=catalog_entry.stream,
