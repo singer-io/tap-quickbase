@@ -274,6 +274,8 @@ def transform_bools(record, schema):
         field_type = sub_schema.get('type')
         if not field_type:
             continue
+        if not record.get(field_prop, None):
+            continue
         if 'boolean' in field_type:
             record[field_prop] = 'false' if record.get(field_prop)=='0' else 'true'
         if 'object' in field_type:
