@@ -16,7 +16,7 @@ from singer.schema import Schema
 from tap_quickbase import qbconn
 
 REQUIRED_CONFIG_KEYS = ['qb_url', 'qb_appid', 'qb_user_token', 'start_date']
-DATETIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
+DATETIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 CONFIG = {}
 STATE = {}
 NUM_RECORDS = 100
@@ -31,6 +31,11 @@ def format_child_field_name(parent_name, child_name):
 def format_epoch_milliseconds(epoch_timestamp):
     epoch_sec = int(epoch_timestamp) / 1000.0
     return datetime.datetime.utcfromtimestamp(epoch_sec).strftime(DATETIME_FMT)
+
+def convert_to_epoch_milliseconds(dt_string):
+    dt = datetime.datetime.strptime(dt_string, DATETIME_FMT)
+    epoch = datetime.datetime.utcfromtimestamp(0)
+    return int((dt-epoch).total_seconds() * 1000.0)
 
 def build_state(raw_state, catalog):
     LOGGER.info(
@@ -338,7 +343,8 @@ def gen_request(conn, stream, params=None):
 
     while True:
         if start:
-            query_params['query'] = "{2.AF.%s}" % start
+            start_millis = str(convert_to_epoch_milliseconds(start))
+            query_params['query'] = "{2.AF.%s}" % start_millis
 
         results = request(conn, table_id, query_params)
         for res in results:
