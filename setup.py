@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name='tap-quickbase',
-      version='0.3.4',
+      version='0.3.5',
       description='Singer.io tap for extracting data from QuickBase',
       author='Stitch',
       url='https://singer.io',
