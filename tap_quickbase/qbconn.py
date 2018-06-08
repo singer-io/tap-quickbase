@@ -44,7 +44,12 @@ class QBConn:
             self.error = -1
         else:
             tree = ElementTree.fromstring(resp.content)
-            self.error = int(tree.find('errcode').text)
+            self.error_code = int(tree.find('errcode').text)
+            if self.error_code != 0:
+                error = tree.find('errdetail')
+                error = tree.find('errtext') if error is None else error # XML nodes are falsy, so must explicitly check for None
+                self.error =  error.text if error is not None else "No error description provided by Quickbase."
+                raise Exception("Error response from Quickbase (Code {}): {}".format(self.error_code, self.error))
             return tree
 
     def query(self, table_id, query, headers=None):
