@@ -83,6 +83,8 @@ class QBConn:
         remote_tables = schema.find('table').find('chdbids')
         database_name = schema.find('table').find('name').text
         tables = []
+        if remote_tables is None:
+            raise Exception("Error discovering streams: The specified application contains no tables.")
         for remote_table in remote_tables:
             tables.append({
                 'id': remote_table.text,
