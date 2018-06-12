@@ -81,7 +81,7 @@ class QBConn:
         params = {'act': 'API_GetSchema'}
         schema = self.request(params, self.appid)
         remote_tables = schema.find('table').find('chdbids')
-        database_name = schema.find('table').find('name').text
+        app_name = schema.find('table').find('name').text
         tables = []
         if remote_tables is None:
             raise Exception("Error discovering streams: The specified application contains no tables.")
@@ -89,8 +89,8 @@ class QBConn:
             tables.append({
                 'id': remote_table.text,
                 'name': remote_table.attrib['name'][6:],
-                'database_name': database_name,
-                'database_id': self.appid
+                'app_name': app_name,
+                'app_id': self.appid
             })
         return tables
 
