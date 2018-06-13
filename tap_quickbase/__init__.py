@@ -166,7 +166,7 @@ def discover_catalog(conn):
             },
             {
                 'metadata': {
-                    'tap_quickbase.app_id': conn.appid
+                    'tap-quickbase.app_id': conn.appid
                 },
                 'breadcrumb': []
             }
@@ -379,7 +379,7 @@ def get_start(table_id, state):
 def sync_table(conn, catalog_entry, state):
     metadata = singer_metadata.to_map(catalog_entry.metadata)
     LOGGER.info("Beginning sync for {}.{} table.".format(
-        singer_metadata.get(metadata, tuple(), "tap_quickbase.app_id"), catalog_entry.table
+        singer_metadata.get(metadata, tuple(), "tap-quickbase.app_id"), catalog_entry.table
     ))
 
     entity = catalog_entry.tap_stream_id
@@ -393,7 +393,7 @@ def sync_table(conn, catalog_entry, state):
     }
 
     with metrics.record_counter(None) as counter:
-        counter.tags['app'] = singer_metadata.get(metadata, tuple(), "tap_quickbase.app_id")
+        counter.tags['app'] = singer_metadata.get(metadata, tuple(), "tap-quickbase.app_id")
         counter.tags['table'] = catalog_entry.table
 
         extraction_time = singer_utils.now()
@@ -435,7 +435,7 @@ def generate_messages(conn, catalog, state):
         metadata = singer_metadata.to_map(catalog_entry.metadata)
         # Emit a RECORD message for each record in the result set
         with metrics.job_timer('sync_table') as timer:
-            timer.tags['app'] = singer_metadata.get(metadata, tuple(), "tap_quickbase.app_id")
+            timer.tags['app'] = singer_metadata.get(metadata, tuple(), "tap-quickbase.app_id")
             timer.tags['table'] = catalog_entry.table
             for message in sync_table(conn, catalog_entry, state):
                 yield message

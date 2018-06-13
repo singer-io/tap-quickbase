@@ -59,7 +59,7 @@ found as well as a default start_date to begin pulling data from.
 **Discovery mode**
 
 The tap can be invoked in discovery mode to find the available tables and columns 
-in the database.
+in the app's data.
 
 ```bash
 $ tap-quickbase --config config.tap.json --discover > properties.json
@@ -76,11 +76,10 @@ description of each table. A source table directly corresponds to a Singer strea
       "key_properties": [
         "rid"
       ],
-      "database_name": "database_id",
       "stream_alias": "table_name",
       "table_name": "table_id",
-      "tap_stream_id": "database_name__table_name",
-      "stream": "database_name__table_name",
+      "tap_stream_id": "app_name__table_name",
+      "stream": "app_name__table_name",
       "schema": {
         "properties": {
           "rid": {
@@ -116,6 +115,12 @@ description of each table. A source table directly corresponds to a Singer strea
         }
       },
       "metadata": [
+        {
+          "metadata": {
+            "tap-quickbase.app_id": app_id
+          },
+          "breadcrumb": []
+        },
         {
           "metadata": {
             "tap-quickbase.id": "1"
@@ -174,11 +179,10 @@ The stream's schema gets a top-level `selected` flag, as does its columns' schem
       "key_properties": [
         "rid"
       ],
-      "database_name": "database_id",
       "stream_alias": "table_name",
       "table_name": "table_id",
-      "tap_stream_id": "database_name__table_name",
-      "stream": "database_name__table_name",
+      "tap_stream_id": "app_name__table_name",
+      "stream": "app_name__table_name",
       "schema": {
         "properties": {
           "rid": {
