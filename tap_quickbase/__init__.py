@@ -264,12 +264,17 @@ def build_field_lists(schema, metadata, breadcrumb):
         breadcrumb.extend(['properties', name])
 
         field_id = singer_metadata.get(metadata, tuple(breadcrumb), 'tap-quickbase.id')
-        if field_id and (sub_schema.selected or sub_schema.inclusion == 'automatic'):
+        selected = singer_metadata.get(metadata, tuple(breadcrumb), 'selected')
+        inclusion = singer_metadata.get(metadata, tuple(breadcrumb), 'inclusion')
+        if field_id and (selected or inclusion == 'automatic'):
             field_list.append(field_id)
             ids_to_breadcrumbs[field_id] = [i for i in breadcrumb]
-        elif sub_schema.properties and (sub_schema.selected or sub_schema.inclusion == 'automatic'):
+        elif sub_schema.properties and (selected or inclusion == 'automatic'):
             for name, child_schema in sub_schema.properties.items():
-                child_schema.selected = True
+                breadcrumb.extend(['properties', name]) # Select children of objects
+                metadata = singer_metadata.write(metadata, tuple(breadcrumb), 'selected', True)
+                breadcrumb.pop()
+                breadcrumb.pop()
             sub_field_list, sub_ids_to_breadcrumbs = build_field_lists(sub_schema, metadata, breadcrumb)
             field_list.extend(sub_field_list)
             ids_to_breadcrumbs.update(sub_ids_to_breadcrumbs)
