@@ -135,16 +135,16 @@ def populate_schema_node(schema, field_info, id_field_map, breadcrumb, metadata)
         breadcrumb.pop()
 
 def discover_catalog(conn):
-    """Returns a Catalog describing the table structure of the target database"""
+    """Returns a Catalog describing the table structure of the target application"""
     entries = []
 
     for table in conn.get_tables():
-        # the stream is in format database_name__table_name with all non alphanumeric
+        # the stream is in format app_name__table_name with all non alphanumeric
         # and `_` characters replaced with an `_`.
         stream = re.sub(
             '[^0-9a-z_]+',
             '_',
-            "{}__{}".format(table.get('database_name').lower(), table.get('name')).lower()
+            "{}__{}".format(table.get('app_name').lower(), table.get('name')).lower()
         )
 
         # by default we will ALWAYS have 'rid' as an automatically included primary key field.
@@ -163,6 +163,12 @@ def discover_catalog(conn):
                     'inclusion': 'automatic'
                 },
                 'breadcrumb': ['properties','rid']
+            },
+            {
+                'metadata': {
+                    'tap-quickbase.app_id': conn.appid
+                },
+                'breadcrumb': []
             }
         ]
 
@@ -189,7 +195,6 @@ def discover_catalog(conn):
                 schema.properties[field_info.get('name')] = leaf_schema
 
         entry = CatalogEntry(
-            database=conn.appid,
             table=table.get('id'),
             stream_alias=table.get('name'),
             stream=stream,
@@ -259,12 +264,17 @@ def build_field_lists(schema, metadata, breadcrumb):
         breadcrumb.extend(['properties', name])
 
         field_id = singer_metadata.get(metadata, tuple(breadcrumb), 'tap-quickbase.id')
-        if field_id and (sub_schema.selected or sub_schema.inclusion == 'automatic'):
+        selected = singer_metadata.get(metadata, tuple(breadcrumb), 'selected')
+        inclusion = singer_metadata.get(metadata, tuple(breadcrumb), 'inclusion')
+        if field_id and (selected or inclusion == 'automatic'):
             field_list.append(field_id)
             ids_to_breadcrumbs[field_id] = [i for i in breadcrumb]
-        elif sub_schema.properties and (sub_schema.selected or sub_schema.inclusion == 'automatic'):
+        elif sub_schema.properties and (selected or inclusion == 'automatic'):
             for name, child_schema in sub_schema.properties.items():
-                child_schema.selected = True
+                breadcrumb.extend(['properties', name]) # Select children of objects
+                metadata = singer_metadata.write(metadata, tuple(breadcrumb), 'selected', True)
+                breadcrumb.pop()
+                breadcrumb.pop()
             sub_field_list, sub_ids_to_breadcrumbs = build_field_lists(sub_schema, metadata, breadcrumb)
             field_list.extend(sub_field_list)
             ids_to_breadcrumbs.update(sub_ids_to_breadcrumbs)
@@ -372,8 +382,9 @@ def get_start(table_id, state):
     return start
 
 def sync_table(conn, catalog_entry, state):
+    metadata = singer_metadata.to_map(catalog_entry.metadata)
     LOGGER.info("Beginning sync for {}.{} table.".format(
-        catalog_entry.database, catalog_entry.table
+        singer_metadata.get(metadata, tuple(), "tap-quickbase.app_id"), catalog_entry.table
     ))
 
     entity = catalog_entry.tap_stream_id
@@ -387,7 +398,7 @@ def sync_table(conn, catalog_entry, state):
     }
 
     with metrics.record_counter(None) as counter:
-        counter.tags['database'] = catalog_entry.database
+        counter.tags['app'] = singer_metadata.get(metadata, tuple(), "tap-quickbase.app_id")
         counter.tags['table'] = catalog_entry.table
 
         extraction_time = singer_utils.now()
@@ -426,9 +437,10 @@ def generate_messages(conn, catalog, state):
             bookmark_properties=[REPLICATION_KEY]
         )
 
+        metadata = singer_metadata.to_map(catalog_entry.metadata)
         # Emit a RECORD message for each record in the result set
         with metrics.job_timer('sync_table') as timer:
-            timer.tags['database'] = catalog_entry.database
+            timer.tags['app'] = singer_metadata.get(metadata, tuple(), "tap-quickbase.app_id")
             timer.tags['table'] = catalog_entry.table
             for message in sync_table(conn, catalog_entry, state):
                 yield message
