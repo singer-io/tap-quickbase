@@ -117,7 +117,7 @@ description of each table. A source table directly corresponds to a Singer strea
       "metadata": [
         {
           "metadata": {
-            "tap-quickbase.app_id": app_id
+            "tap-quickbase.app_id": "app_id"
           },
           "breadcrumb": []
         },
