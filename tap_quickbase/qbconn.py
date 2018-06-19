@@ -6,7 +6,11 @@ import requests
 
 # This regex is used to transform the column name in `get_fields`
 COLUMN_NAME_TRANSLATION = re.compile(r"[^a-zA-Z0-9_]")
+UNDERSCORE_CONSOLIDATION = re.compile(r"_+")
 
+def sanitize_field_name(name):
+    result = COLUMN_NAME_TRANSLATION.sub('_', name)
+    return UNDERSCORE_CONSOLIDATION.sub('_', result)
 
 class QBConn:
     """
@@ -103,8 +107,7 @@ class QBConn:
         id_to_field = {}
         field_to_ids = {}
         for remote_field in remote_fields:
-            name = remote_field.find('label').text.lower().replace('"', "'")
-            name = COLUMN_NAME_TRANSLATION.sub('', name)
+            name = sanitize_field_name(remote_field.find('label').text.lower().replace('"', "'"))
             id_num =  remote_field.attrib['id']
             if field_to_ids.get(name):
                 field_to_ids[name].append(id_num)
