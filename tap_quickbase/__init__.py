@@ -21,7 +21,7 @@ CONFIG = {}
 STATE = {}
 NUM_RECORDS = 100
 LOGGER = singer.get_logger()
-REPLICATION_KEY = 'date modified'
+REPLICATION_KEY = 'datemodified'
 
 DEBUG_FLAG = False
 

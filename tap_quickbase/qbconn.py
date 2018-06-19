@@ -4,7 +4,8 @@ import logging
 import re
 import requests
 
-COLUMN_NAME_TRANSLATION = re.compile(r"[^a-z0-9_ $!#%&'()*+,-./:;<=>?@[\]^~]")
+# This regex is used to transform the column name in `get_fields`
+COLUMN_NAME_TRANSLATION = re.compile(r"[^a-zA-Z0-9_]")
 
 
 class QBConn:
