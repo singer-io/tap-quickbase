@@ -5,12 +5,15 @@ import re
 import requests
 
 # This regex is used to transform the column name in `get_fields`
+SEPARATORS_TRANSLATION = re.compile(r"[-\s]")
 COLUMN_NAME_TRANSLATION = re.compile(r"[^a-zA-Z0-9_]")
 UNDERSCORE_CONSOLIDATION = re.compile(r"_+")
 
 def sanitize_field_name(name):
-    result = COLUMN_NAME_TRANSLATION.sub('_', name)
-    return UNDERSCORE_CONSOLIDATION.sub('_', result)
+    result = name.lower()
+    result = SEPARATORS_TRANSLATION.sub('_', result) # Replace separator characters with underscores
+    result = COLUMN_NAME_TRANSLATION.sub('', result) # Remove all other non-alphanumeric characters
+    return UNDERSCORE_CONSOLIDATION.sub('_', result) # Consolidate consecutive underscores
 
 class QBConn:
     """
