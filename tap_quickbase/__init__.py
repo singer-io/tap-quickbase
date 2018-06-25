@@ -459,8 +459,9 @@ def do_sync(conn, catalog, state):
 def main_impl():
     args = singer.utils.parse_args(REQUIRED_CONFIG_KEYS)
     CONFIG.update(args.config)
+    base_url = CONFIG['qb_url'] if CONFIG['qb_url'].endswith('/') else CONFIG['qb_url'] + '/'
     conn = qbconn.QBConn(
-        CONFIG['qb_url'],
+        base_url,
         CONFIG['qb_appid'],
         user_token=CONFIG['qb_user_token'],
         logger=LOGGER
