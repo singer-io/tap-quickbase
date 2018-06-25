@@ -455,11 +455,21 @@ def do_sync(conn, catalog, state):
     for message in generate_messages(conn, catalog, state):
         singer.write_message(message)
 
+def correct_base_url(url):
+    result = url
+    if url.startswith('http:'):
+        LOGGER.warn("Replacing 'http' with 'https' for 'qb_url' configuration option. Quick Base requires https connections.")
+        result = 'https:' + url[5:]
+
+    if not url.endswith('/'):
+        result = result + '/'
+
+    return result
 
 def main_impl():
     args = singer.utils.parse_args(REQUIRED_CONFIG_KEYS)
     CONFIG.update(args.config)
-    base_url = CONFIG['qb_url'] if CONFIG['qb_url'].endswith('/') else CONFIG['qb_url'] + '/'
+    base_url = correct_base_url(CONFIG['qb_url'])
     conn = qbconn.QBConn(
         base_url,
         CONFIG['qb_appid'],
