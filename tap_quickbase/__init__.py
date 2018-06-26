@@ -21,7 +21,7 @@ CONFIG = {}
 STATE = {}
 NUM_RECORDS = 100
 LOGGER = singer.get_logger()
-REPLICATION_KEY = 'date modified'
+REPLICATION_KEY = qbconn.sanitize_field_name('date modified')
 
 DEBUG_FLAG = False
 
