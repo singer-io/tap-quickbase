@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.0
+  * Replace spaces and hyphens in field names with underscores, remove all other non-alphanumeric characters
+
 ## 1.0.3
   * Ensures that the base url has a trailing slash and uses the HTTPS protocol.
 
