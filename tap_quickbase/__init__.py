@@ -2,6 +2,8 @@
 # pylint: disable=missing-docstring,not-an-iterable,too-many-locals,too-many-arguments,invalid-name
 import copy
 import datetime
+import time
+import pytz
 import os
 import re
 
@@ -25,12 +27,19 @@ REPLICATION_KEY = qbconn.sanitize_field_name('date modified')
 
 DEBUG_FLAG = False
 
+class TimestampOutOfRangeException(Exception):
+    pass
+
 def format_child_field_name(parent_name, child_name):
     return "{}.{}".format(parent_name, child_name)
 
 def format_epoch_milliseconds(epoch_timestamp):
+    # NB: Quick Base allows year values greater than 9999
+    # datetime.fromutctimestamp() only supports up to year 2038, so create one directly from struct_time
+    # This will throw a ValueError with year values > 9999
     epoch_sec = int(epoch_timestamp) / 1000.0
-    return datetime.datetime.utcfromtimestamp(epoch_sec).strftime(DATETIME_FMT)
+    epoch_time = time.gmtime(epoch_sec)
+    return datetime.datetime(*epoch_time[:6]).replace(tzinfo=pytz.UTC).strftime(DATETIME_FMT)
 
 def convert_to_epoch_milliseconds(dt_string):
     dt = datetime.datetime.strptime(dt_string, DATETIME_FMT)
@@ -54,8 +63,6 @@ def build_state(raw_state, catalog):
         state = singer.write_bookmark(state, catalog_entry.tap_stream_id, REPLICATION_KEY, start)
 
     return state
-
-
 
 def populate_schema_leaf(schema, field_info, id_num, breadcrumb, metadata):
     """
@@ -214,38 +221,6 @@ def discover_catalog(conn):
 def do_discover(conn):
     discover_catalog(conn).dump()
 
-
-def transform_data(data, schema):
-    """
-    By default everything from QB API is strings,
-    convert to other datatypes where specified by the schema
-    """
-    for field_name, field_value in iter(data.items()):
-
-        if field_value is not None and field_name in schema.properties:
-            field_type = schema.properties.get(field_name).type
-            field_format = schema.properties.get(field_name).format
-
-            # date-time datatype
-            if field_format == 'date-time':
-                try:
-                    # convert epoch timestamps to date strings
-                    data[field_name] = format_epoch_milliseconds(field_value)
-                except (ValueError, TypeError):
-                    data[field_name] = None
-
-            # number (float) datatype
-            if field_type == "number" or "number" in field_type:
-                try:
-                    data[field_name] = float(field_value)
-                except (ValueError, TypeError):
-                    data[field_name] = None
-
-            # boolean datatype
-            if field_type == "boolean" or "boolean" in field_type:
-                data[field_name] = field_value == "1"
-
-
 @singer.utils.ratelimit(2, 1)
 def request(conn, table_id, query_params):
     headers = {}
@@ -295,6 +270,28 @@ def transform_bools(record, schema):
             record[field_prop] = 'false' if record.get(field_prop)=='0' else 'true'
         if 'object' in field_type:
             record[field_prop] = transform_bools(record[field_prop], sub_schema)
+    return record
+
+def transform_datetimes(record, schema, stream_name):
+    for field_prop, sub_schema in schema['properties'].items():
+        field_type = sub_schema.get('type')
+        field_format = sub_schema.get('format')
+        if not field_format:
+            continue
+        if not record.get(field_prop, None):
+            continue
+        if 'date-time' == field_format:
+            try:
+                record[field_prop] = format_epoch_milliseconds(record[field_prop])
+            except ValueError as ex:
+                LOGGER.error("Record containing out of range timestamp: {}".format(record))
+                raise TimestampOutOfRangeException(('Error syncing stream "{}" - ' +
+                                                   'Found out of range timestamp: {} for field: "{}"')
+                                                   .format(stream_name,
+                                                           time.gmtime(int(record[field_prop]) / 1000.0)[:6],
+                                                           field_prop)) from ex
+        if 'object' in field_type:
+            record[field_prop] = transform_datetimes(record[field_prop], sub_schema)
     return record
 
 
@@ -383,9 +380,7 @@ def get_start(table_id, state):
 
 def sync_table(conn, catalog_entry, state):
     metadata = singer_metadata.to_map(catalog_entry.metadata)
-    LOGGER.info("Beginning sync for {}.{} table.".format(
-        singer_metadata.get(metadata, tuple(), "tap-quickbase.app_id"), catalog_entry.table
-    ))
+    LOGGER.info("Beginning sync for {}.".format(catalog_entry.stream))
 
     entity = catalog_entry.tap_stream_id
     if not entity:
@@ -404,8 +399,10 @@ def sync_table(conn, catalog_entry, state):
         extraction_time = singer_utils.now()
         for rows_saved, row in enumerate(gen_request(conn, catalog_entry, params)):
             counter.increment()
-            rec = transform_bools(row, catalog_entry.schema.to_dict())
-            rec = singer.transform(rec, catalog_entry.schema.to_dict(), singer.UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING)
+            schema_dict = catalog_entry.schema.to_dict()
+            rec = transform_bools(row, schema_dict)
+            rec = transform_datetimes(rec, schema_dict, catalog_entry.stream)
+            rec = singer.transform(rec, schema_dict, singer.UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING)
 
             yield singer.RecordMessage(
                 stream=catalog_entry.stream,
@@ -417,7 +414,7 @@ def sync_table(conn, catalog_entry, state):
                 state,
                 catalog_entry.tap_stream_id,
                 REPLICATION_KEY,
-                format_epoch_milliseconds(row[REPLICATION_KEY])
+                rec[REPLICATION_KEY]
             )
             if (rows_saved+1) % 1000 == 0:
                 yield singer.StateMessage(value=copy.deepcopy(state))

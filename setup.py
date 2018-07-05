@@ -13,6 +13,7 @@ setup(name='tap-quickbase',
           'singer-python==5.0.6',
           'requests==2.18.4',
           'python-dateutil==2.6.1',
+          'pytz==2018.4',
       ],
       entry_points='''
         [console_scripts]
