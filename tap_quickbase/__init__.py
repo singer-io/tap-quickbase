@@ -55,8 +55,6 @@ def build_state(raw_state, catalog):
 
     return state
 
-
-
 def populate_schema_leaf(schema, field_info, id_num, breadcrumb, metadata):
     """
     Populates a leaf in the schema.  A leaf corresponds to a JSON boolean,
@@ -213,38 +211,6 @@ def discover_catalog(conn):
 
 def do_discover(conn):
     discover_catalog(conn).dump()
-
-
-def transform_data(data, schema):
-    """
-    By default everything from QB API is strings,
-    convert to other datatypes where specified by the schema
-    """
-    for field_name, field_value in iter(data.items()):
-
-        if field_value is not None and field_name in schema.properties:
-            field_type = schema.properties.get(field_name).type
-            field_format = schema.properties.get(field_name).format
-
-            # date-time datatype
-            if field_format == 'date-time':
-                try:
-                    # convert epoch timestamps to date strings
-                    data[field_name] = format_epoch_milliseconds(field_value)
-                except (ValueError, TypeError):
-                    data[field_name] = None
-
-            # number (float) datatype
-            if field_type == "number" or "number" in field_type:
-                try:
-                    data[field_name] = float(field_value)
-                except (ValueError, TypeError):
-                    data[field_name] = None
-
-            # boolean datatype
-            if field_type == "boolean" or "boolean" in field_type:
-                data[field_name] = field_value == "1"
-
 
 @singer.utils.ratelimit(2, 1)
 def request(conn, table_id, query_params):
