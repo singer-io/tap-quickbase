@@ -2,6 +2,8 @@
 # pylint: disable=missing-docstring,not-an-iterable,too-many-locals,too-many-arguments,invalid-name
 import copy
 import datetime
+import time
+import pytz
 import os
 import re
 
@@ -25,12 +27,19 @@ REPLICATION_KEY = qbconn.sanitize_field_name('date modified')
 
 DEBUG_FLAG = False
 
+class TimestampOutOfRangeException(Exception):
+    pass
+
 def format_child_field_name(parent_name, child_name):
     return "{}.{}".format(parent_name, child_name)
 
 def format_epoch_milliseconds(epoch_timestamp):
+    # NB: Quick Base allows year values greater than 9999
+    # datetime.fromutctimestamp() only supports up to year 2038, so create one directly from struct_time
+    # This will throw a ValueError with year values > 9999
     epoch_sec = int(epoch_timestamp) / 1000.0
-    return datetime.datetime.utcfromtimestamp(epoch_sec).strftime(DATETIME_FMT)
+    epoch_time = time.gmtime(epoch_sec)
+    return datetime.datetime(*epoch_time[:6]).replace(tzinfo=pytz.UTC).strftime(DATETIME_FMT)
 
 def convert_to_epoch_milliseconds(dt_string):
     dt = datetime.datetime.strptime(dt_string, DATETIME_FMT)
@@ -263,6 +272,28 @@ def transform_bools(record, schema):
             record[field_prop] = transform_bools(record[field_prop], sub_schema)
     return record
 
+def transform_datetimes(record, schema, stream_name):
+    for field_prop, sub_schema in schema['properties'].items():
+        field_type = sub_schema.get('type')
+        field_format = sub_schema.get('format')
+        if not field_format:
+            continue
+        if not record.get(field_prop, None):
+            continue
+        if 'date-time' == field_format:
+            try:
+                record[field_prop] = format_epoch_milliseconds(record[field_prop])
+            except ValueError as ex:
+                LOGGER.error("Error formatting timestamps for record: {}".format(record))
+                raise TimestampOutOfRangeException(('Error syncing stream "{}" - ' +
+                                                   'Found out of range timestamp: {} for field: "{}"')
+                                                   .format(stream_name,
+                                                           time.gmtime(int(record[field_prop]) / 1000.0)[:6],
+                                                           field_prop)) from ex
+        if 'object' in field_type:
+            record[field_prop] = transform_datetimes(record[field_prop], sub_schema)
+    return record
+
 
 def build_record(row, ids_to_breadcrumbs):
     record = {}
@@ -370,8 +401,10 @@ def sync_table(conn, catalog_entry, state):
         extraction_time = singer_utils.now()
         for rows_saved, row in enumerate(gen_request(conn, catalog_entry, params)):
             counter.increment()
-            rec = transform_bools(row, catalog_entry.schema.to_dict())
-            rec = singer.transform(rec, catalog_entry.schema.to_dict(), singer.UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING)
+            schema_dict = catalog_entry.schema.to_dict()
+            rec = transform_bools(row, schema_dict)
+            rec = transform_datetimes(rec, schema_dict, catalog_entry.stream)
+            rec = singer.transform(rec, schema_dict, singer.UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING)
 
             yield singer.RecordMessage(
                 stream=catalog_entry.stream,
