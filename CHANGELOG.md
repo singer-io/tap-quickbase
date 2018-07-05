@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.1
+  * Detect out of range timestamps before emitting records and provide context to help identify the faulty record [#19](https://github.com/singer-io/tap-quickbase/pull/19)
+
 ## 2.0.0
   * Replace spaces and hyphens in field names with underscores, remove all other non-alphanumeric characters
 
