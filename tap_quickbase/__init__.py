@@ -284,7 +284,7 @@ def transform_datetimes(record, schema, stream_name):
             try:
                 record[field_prop] = format_epoch_milliseconds(record[field_prop])
             except ValueError as ex:
-                LOGGER.error("Error formatting timestamps for record: {}".format(record))
+                LOGGER.error("Record containing out of range timestamp: {}".format(record))
                 raise TimestampOutOfRangeException(('Error syncing stream "{}" - ' +
                                                    'Found out of range timestamp: {} for field: "{}"')
                                                    .format(stream_name,
@@ -380,9 +380,7 @@ def get_start(table_id, state):
 
 def sync_table(conn, catalog_entry, state):
     metadata = singer_metadata.to_map(catalog_entry.metadata)
-    LOGGER.info("Beginning sync for {}.{} table.".format(
-        singer_metadata.get(metadata, tuple(), "tap-quickbase.app_id"), catalog_entry.table
-    ))
+    LOGGER.info("Beginning sync for {}.".format(catalog_entry.stream))
 
     entity = catalog_entry.tap_stream_id
     if not entity:
