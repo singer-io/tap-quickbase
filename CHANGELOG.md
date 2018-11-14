@@ -1,7 +1,7 @@
 # Changelog
 
 ## 2.0.2
-  * Update version of `requests` to `0.20.0` in response to CVE 2018-18074
+  * Update version of `requests` to `2.20.0` in response to CVE 2018-18074
 
 ## 2.0.1
   * Detect out of range timestamps before emitting records and provide context to help identify the faulty record [#19](https://github.com/singer-io/tap-quickbase/pull/19)
