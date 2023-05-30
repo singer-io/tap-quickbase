@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.3
+  * Dependabot update [#26](https://github.com/singer-io/tap-quickbase/pull/26)
+
 ## 2.0.2
   * Update version of `requests` to `2.20.0` in response to CVE 2018-18074
 
