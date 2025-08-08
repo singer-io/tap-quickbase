@@ -143,7 +143,7 @@ class QBConn:
             id_to_field[id_num] = field_info
 
         # handle duplicate field names by appending id num to end of name
-        for field_name, field_id_list in field_to_ids.items():
+        for field_id_list in field_to_ids.items():
             field_id_list = [i for i in field_id_list if not id_to_field[i].get('parent_field_id')]
             if len(field_id_list) > 1:
                 for dup_id in field_id_list:
