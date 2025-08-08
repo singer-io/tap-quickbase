@@ -48,9 +48,7 @@ def convert_to_epoch_milliseconds(dt_string):
     return int((dt-epoch).total_seconds() * 1000.0)
 
 def build_state(raw_state, catalog):
-    LOGGER.info(
-        'Building State from raw state {}'.format(raw_state)
-    )
+    LOGGER.info('Building State from raw state %s', raw_state)
 
     state = {}
 
@@ -78,7 +76,7 @@ def populate_schema_leaf(schema, field_info, id_num, breadcrumb, metadata):
                 'tap-quickbase.id': id_num,
                 'inclusion': inclusion
             },
-            'breadcrumb': [i for i in breadcrumb]
+            'breadcrumb': list(breadcrumb)
         }
     )
 
@@ -119,7 +117,7 @@ def populate_schema_node(schema, field_info, id_field_map, breadcrumb, metadata)
             'metadata': {
                 'inclusion': 'available'
             },
-            'breadcrumb': [i for i in breadcrumb]
+            'breadcrumb': list(breadcrumb)
         }
     )
 
@@ -191,7 +189,7 @@ def discover_catalog(conn):
                 continue
 
             # if this field has children, add them
-            elif field_info.get('composite_fields'):
+            if field_info.get('composite_fields'):
                 node_schema = Schema()
                 populate_schema_node(node_schema, field_info, id_to_fields, breadcrumb, metadata)
                 schema.properties[field_info.get('name')] = node_schema
@@ -244,7 +242,7 @@ def build_field_lists(schema, metadata, breadcrumb):
         inclusion = singer_metadata.get(metadata, tuple(breadcrumb), 'inclusion')
         if field_id and (selected or inclusion == 'automatic'):
             field_list.append(field_id)
-            ids_to_breadcrumbs[field_id] = [i for i in breadcrumb]
+            ids_to_breadcrumbs[field_id] = list(breadcrumb)
         elif sub_schema.properties and (selected or inclusion == 'automatic'):
             for name, child_schema in sub_schema.properties.items():
                 breadcrumb.extend(['properties', name]) # Select children of objects

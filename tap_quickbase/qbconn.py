@@ -36,7 +36,7 @@ class QBConn:
         Adds the appropriate fields to the request and sends it to QB
         Takes a dict of parameter:value pairs and the url extension (main or your table ID, mostly)
         """
-        headers = headers or dict()
+        headers = headers or {}
         url = self.url
         url += url_ext
 
@@ -66,7 +66,7 @@ class QBConn:
         Returns a list of dicts containing fieldid:value pairs.
         record ID will always be specified by the "rid" key
         """
-        headers = headers or dict()
+        headers = headers or {}
         params = dict(query)
         params['act'] = "API_DoQuery"
         params['includeRids'] = '1'
@@ -74,7 +74,7 @@ class QBConn:
         records = self.request(params, table_id, headers=headers).find('table').find('records')
         data = []
         for record in records:
-            temp = dict()
+            temp = {}
             temp['rid'] = record.attrib['rid']
             for field in record:
                 if field.tag == "f":

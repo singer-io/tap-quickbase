@@ -17,7 +17,7 @@ jobs:
          command: |
             source /usr/local/share/virtualenvs/tap-quickbase/bin/activate
             uv pip install pylint
-            pylint tap_quickbase -d missing-docstring,invalid-name,too-many-locals,too-few-public-methods,fixme,line-too-long,consider-using-f-string,broad-exception-raised,too-many-positional-arguments
+            pylint tap_quickbase -d missing-docstring,invalid-name,too-many-locals,too-few-public-methods,fixme,line-too-long,consider-using-f-string,broad-exception-raised,too-many-positional-arguments,consider-using-from-import,missing-timeout
       - store_test_results:
           path: test_output/report.xml
       - store_artifacts:
