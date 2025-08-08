@@ -3,9 +3,10 @@
 import copy
 import datetime
 import time
-import pytz
 import os
 import re
+import pytz
+
 
 import dateutil.parser
 import singer
@@ -439,8 +440,7 @@ def generate_messages(conn, catalog, state):
         with metrics.job_timer('sync_table') as timer:
             timer.tags['app'] = singer_metadata.get(metadata, tuple(), "tap-quickbase.app_id")
             timer.tags['table'] = catalog_entry.table
-            for message in sync_table(conn, catalog_entry, state):
-                yield message
+            yield from sync_table(conn, catalog_entry, state)
 
         # Emit a state message
         yield singer.StateMessage(value=copy.deepcopy(state))
@@ -455,7 +455,7 @@ def do_sync(conn, catalog, state):
 def correct_base_url(url):
     result = url
     if url.startswith('http:'):
-        LOGGER.warn("Replacing 'http' with 'https' for 'qb_url' configuration option. Quick Base requires https connections.")
+        LOGGER.warning("Replacing 'http' with 'https' for 'qb_url' configuration option. Quick Base requires https connections.")
         result = 'https:' + url[5:]
 
     if not url.endswith('/'):
