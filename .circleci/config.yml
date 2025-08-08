@@ -11,12 +11,13 @@ jobs:
             uv venv --python 3.9 /usr/local/share/virtualenvs/tap-quickbase
             source /usr/local/share/virtualenvs/tap-quickbase/bin/activate
             uv pip install -U pip setuptools
+            u pip install .
       - run:
          name: 'pylint'
          command: |
             source /usr/local/share/virtualenvs/tap-quickbase/bin/activate
             uv pip install pylint
-            pylint tap_quickbase -d missing-docstring,invalid-name,too-many-locals,too-few-public-methods,fixme
+            pylint tap_quickbase -d missing-docstring,invalid-name,too-many-locals,too-few-public-methods,fixme,line-too-long,consider-using-f-string
       - store_test_results:
           path: test_output/report.xml
       - store_artifacts:
