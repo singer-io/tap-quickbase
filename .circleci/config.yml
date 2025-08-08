@@ -11,7 +11,7 @@ jobs:
             uv venv --python 3.9 /usr/local/share/virtualenvs/tap-quickbase
             source /usr/local/share/virtualenvs/tap-quickbase/bin/activate
             uv pip install -U pip setuptools
-            u pip install .
+            uv pip install .
       - run:
          name: 'pylint'
          command: |
