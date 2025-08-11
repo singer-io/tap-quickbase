@@ -290,7 +290,7 @@ def transform_datetimes(record, schema, stream_name):
                                                            time.gmtime(int(record[field_prop]) / 1000.0)[:6],
                                                            field_prop)) from ex
         if 'object' in field_type:
-            record[field_prop] = transform_datetimes(record[field_prop], sub_schema)
+            record[field_prop] = transform_datetimes(record[field_prop], sub_schema, stream_name)
     return record
 
 
