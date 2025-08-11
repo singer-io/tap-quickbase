@@ -29,6 +29,7 @@ class QBConn:
         # Set after every API call.
         # A non-zero value indicates an error. A negative value indicates an error with this lib
         self.error = 0
+        self.error_code = None
         self.logger = logger or logging.getLogger(__name__)
 
     def request(self, params, url_ext, headers=None):
@@ -36,7 +37,7 @@ class QBConn:
         Adds the appropriate fields to the request and sends it to QB
         Takes a dict of parameter:value pairs and the url extension (main or your table ID, mostly)
         """
-        headers = headers or dict()
+        headers = headers or {}
         url = self.url
         url += url_ext
 
@@ -50,15 +51,16 @@ class QBConn:
         if re.match(r'^<\?xml version=', resp.content.decode("utf-8")) is None:
             print("No useful data received")
             self.error = -1
-        else:
-            tree = ElementTree.fromstring(resp.content)
-            self.error_code = int(tree.find('errcode').text)
-            if self.error_code != 0:
-                error = tree.find('errdetail')
-                error = tree.find('errtext') if error is None else error # XML nodes are falsy, so must explicitly check for None
-                self.error =  error.text if error is not None else "No error description provided by Quick Base."
-                raise Exception("Error response from Quick Base (Code {}): {}".format(self.error_code, self.error))
-            return tree
+            return None
+
+        tree = ElementTree.fromstring(resp.content)
+        self.error_code = int(tree.find('errcode').text)
+        if self.error_code != 0:
+            error = tree.find('errdetail')
+            error = tree.find('errtext') if error is None else error # XML nodes are falsy, so must explicitly check for None
+            self.error =  error.text if error is not None else "No error description provided by Quick Base."
+            raise Exception("Error response from Quick Base (Code {}): {}".format(self.error_code, self.error))
+        return tree
 
     def query(self, table_id, query, headers=None):
         """
@@ -66,7 +68,7 @@ class QBConn:
         Returns a list of dicts containing fieldid:value pairs.
         record ID will always be specified by the "rid" key
         """
-        headers = headers or dict()
+        headers = headers or {}
         params = dict(query)
         params['act'] = "API_DoQuery"
         params['includeRids'] = '1'
@@ -74,7 +76,7 @@ class QBConn:
         records = self.request(params, table_id, headers=headers).find('table').find('records')
         data = []
         for record in records:
-            temp = dict()
+            temp = {}
             temp['rid'] = record.attrib['rid']
             for field in record:
                 if field.tag == "f":
@@ -143,7 +145,7 @@ class QBConn:
             id_to_field[id_num] = field_info
 
         # handle duplicate field names by appending id num to end of name
-        for field_name, field_id_list in field_to_ids.items():
+        for _field_name, field_id_list in field_to_ids.items():
             field_id_list = [i for i in field_id_list if not id_to_field[i].get('parent_field_id')]
             if len(field_id_list) > 1:
                 for dup_id in field_id_list:

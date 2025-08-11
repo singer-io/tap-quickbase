@@ -3,9 +3,10 @@
 import copy
 import datetime
 import time
-import pytz
 import os
 import re
+import pytz
+
 
 import dateutil.parser
 import singer
@@ -47,9 +48,7 @@ def convert_to_epoch_milliseconds(dt_string):
     return int((dt-epoch).total_seconds() * 1000.0)
 
 def build_state(raw_state, catalog):
-    LOGGER.info(
-        'Building State from raw state {}'.format(raw_state)
-    )
+    LOGGER.info('Building State from raw state %s', raw_state)
 
     state = {}
 
@@ -77,7 +76,7 @@ def populate_schema_leaf(schema, field_info, id_num, breadcrumb, metadata):
                 'tap-quickbase.id': id_num,
                 'inclusion': inclusion
             },
-            'breadcrumb': [i for i in breadcrumb]
+            'breadcrumb': list(breadcrumb)
         }
     )
 
@@ -118,7 +117,7 @@ def populate_schema_node(schema, field_info, id_field_map, breadcrumb, metadata)
             'metadata': {
                 'inclusion': 'available'
             },
-            'breadcrumb': [i for i in breadcrumb]
+            'breadcrumb': list(breadcrumb)
         }
     )
 
@@ -190,7 +189,7 @@ def discover_catalog(conn):
                 continue
 
             # if this field has children, add them
-            elif field_info.get('composite_fields'):
+            if field_info.get('composite_fields'):
                 node_schema = Schema()
                 populate_schema_node(node_schema, field_info, id_to_fields, breadcrumb, metadata)
                 schema.properties[field_info.get('name')] = node_schema
@@ -243,9 +242,9 @@ def build_field_lists(schema, metadata, breadcrumb):
         inclusion = singer_metadata.get(metadata, tuple(breadcrumb), 'inclusion')
         if field_id and (selected or inclusion == 'automatic'):
             field_list.append(field_id)
-            ids_to_breadcrumbs[field_id] = [i for i in breadcrumb]
+            ids_to_breadcrumbs[field_id] = list(breadcrumb)
         elif sub_schema.properties and (selected or inclusion == 'automatic'):
-            for name, child_schema in sub_schema.properties.items():
+            for name, _child_schema in sub_schema.properties.items():
                 breadcrumb.extend(['properties', name]) # Select children of objects
                 metadata = singer_metadata.write(metadata, tuple(breadcrumb), 'selected', True)
                 breadcrumb.pop()
@@ -284,14 +283,14 @@ def transform_datetimes(record, schema, stream_name):
             try:
                 record[field_prop] = format_epoch_milliseconds(record[field_prop])
             except ValueError as ex:
-                LOGGER.error("Record containing out of range timestamp: {}".format(record))
+                LOGGER.error("Record containing out of range timestamp: %s", record)
                 raise TimestampOutOfRangeException(('Error syncing stream "{}" - ' +
                                                    'Found out of range timestamp: {} for field: "{}"')
                                                    .format(stream_name,
                                                            time.gmtime(int(record[field_prop]) / 1000.0)[:6],
                                                            field_prop)) from ex
         if 'object' in field_type:
-            record[field_prop] = transform_datetimes(record[field_prop], sub_schema)
+            record[field_prop] = transform_datetimes(record[field_prop], sub_schema, stream_name)
     return record
 
 
@@ -334,9 +333,7 @@ def gen_request(conn, stream, params=None):
 
     # we always want the Date Modified field
     if '2' not in field_list:
-        LOGGER.warning(
-            "Date Modified field not included for {}. Skipping.".format(stream.tap_stream_id)
-        )
+        LOGGER.warning("Date Modified field not included for %s. Skipping.", stream.tap_stream_id)
 
     query_params = {
         'clist': '.'.join(field_list),
@@ -380,7 +377,7 @@ def get_start(table_id, state):
 
 def sync_table(conn, catalog_entry, state):
     metadata = singer_metadata.to_map(catalog_entry.metadata)
-    LOGGER.info("Beginning sync for {}.".format(catalog_entry.stream))
+    LOGGER.info("Beginning sync for %s.", catalog_entry.stream)
 
     entity = catalog_entry.tap_stream_id
     if not entity:
@@ -439,8 +436,7 @@ def generate_messages(conn, catalog, state):
         with metrics.job_timer('sync_table') as timer:
             timer.tags['app'] = singer_metadata.get(metadata, tuple(), "tap-quickbase.app_id")
             timer.tags['table'] = catalog_entry.table
-            for message in sync_table(conn, catalog_entry, state):
-                yield message
+            yield from sync_table(conn, catalog_entry, state)
 
         # Emit a state message
         yield singer.StateMessage(value=copy.deepcopy(state))
@@ -455,7 +451,7 @@ def do_sync(conn, catalog, state):
 def correct_base_url(url):
     result = url
     if url.startswith('http:'):
-        LOGGER.warn("Replacing 'http' with 'https' for 'qb_url' configuration option. Quick Base requires https connections.")
+        LOGGER.warning("Replacing 'http' with 'https' for 'qb_url' configuration option. Quick Base requires https connections.")
         result = 'https:' + url[5:]
 
     if not url.endswith('/'):
