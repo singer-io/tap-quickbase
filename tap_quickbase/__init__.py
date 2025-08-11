@@ -244,7 +244,7 @@ def build_field_lists(schema, metadata, breadcrumb):
             field_list.append(field_id)
             ids_to_breadcrumbs[field_id] = list(breadcrumb)
         elif sub_schema.properties and (selected or inclusion == 'automatic'):
-            for name in sub_schema.properties.items():
+            for name, _child_schema in sub_schema.properties.items():
                 breadcrumb.extend(['properties', name]) # Select children of objects
                 metadata = singer_metadata.write(metadata, tuple(breadcrumb), 'selected', True)
                 breadcrumb.pop()
