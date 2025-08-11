@@ -29,6 +29,7 @@ class QBConn:
         # Set after every API call.
         # A non-zero value indicates an error. A negative value indicates an error with this lib
         self.error = 0
+        self.error_code = None
         self.logger = logger or logging.getLogger(__name__)
 
     def request(self, params, url_ext, headers=None):
