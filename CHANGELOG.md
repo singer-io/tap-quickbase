@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.3
+  * Adds a proper circleci config; makes pylint happy; bump library versions [#27](https://github.com/singer-io/tap-quickbase/pull/27)
+
 ## 2.0.2
   * Update version of `requests` to `2.20.0` in response to CVE 2018-18074
 
