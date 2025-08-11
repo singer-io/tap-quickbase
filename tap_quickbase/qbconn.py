@@ -50,6 +50,7 @@ class QBConn:
         if re.match(r'^<\?xml version=', resp.content.decode("utf-8")) is None:
             print("No useful data received")
             self.error = -1
+            return None
         else:
             tree = ElementTree.fromstring(resp.content)
             self.error_code = int(tree.find('errcode').text)
