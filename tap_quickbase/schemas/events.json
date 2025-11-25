@@ -1,1 +1,58 @@
-{}
+{
+    "type": "object",
+    "properties": {
+        "type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "owner": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "id": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "name": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "userName": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                }
+            }
+        },
+        "isActive": {
+            "type": [
+                "null",
+                "boolean"
+            ]
+        },
+        "tableId": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "name": {
+            "type": [
+                "null",
+                "string"
+            ]
+        }
+    }
+}

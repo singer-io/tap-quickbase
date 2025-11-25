@@ -1,1 +1,192 @@
-{}
+{
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "name": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "description": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "query": {
+            "type": "object",
+            "properties": {
+                "tableId": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "filter": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "formulaFields": {
+                    "type": [
+                        "null",
+                        "array"
+                    ],
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": [
+                                    "null",
+                                    "integer"
+                                ]
+                            },
+                            "label": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "fieldType": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "formula": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "decimalPrecision": {
+                                "type": [
+                                    "null",
+                                    "integer"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "fields": {
+                    "type": [
+                        "null",
+                        "array"
+                    ],
+                    "items": {
+                        "type": [
+                            "null",
+                            "integer"
+                        ]
+                    }
+                },
+                "sortBy": {
+                    "type": [
+                        "null",
+                        "array"
+                    ],
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "fieldId": {
+                                "type": [
+                                    "null",
+                                    "integer"
+                                ]
+                            },
+                            "order": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "groupBy": {
+                    "type": [
+                        "null",
+                        "array"
+                    ],
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "fieldId": {
+                                "type": [
+                                    "null",
+                                    "integer"
+                                ]
+                            },
+                            "grouping": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "properties": {
+            "type": "object",
+            "properties": {
+                "displayOnlyNewOrChangedRecords": {
+                    "type": [
+                        "null",
+                        "boolean"
+                    ]
+                },
+                "columnProperties": {
+                    "type": [
+                        "null",
+                        "array"
+                    ],
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "fieldId": {
+                                "type": [
+                                    "null",
+                                    "integer"
+                                ]
+                            },
+                            "labelOverride": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "usedLast": {
+            "type": [
+                "null",
+                "string"
+            ],
+            "format": "date-time"
+        },
+        "usedCount": {
+            "type": [
+                "null",
+                "integer"
+            ]
+        }
+    }
+}

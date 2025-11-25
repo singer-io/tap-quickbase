@@ -1,1 +1,189 @@
-{}
+{
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": [
+                "null",
+                "integer"
+            ]
+        },
+        "label": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "fieldType": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "mode": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "noWrap": {
+            "type": [
+                "null",
+                "boolean"
+            ]
+        },
+        "bold": {
+            "type": [
+                "null",
+                "boolean"
+            ]
+        },
+        "required": {
+            "type": [
+                "null",
+                "boolean"
+            ]
+        },
+        "appearsByDefault": {
+            "type": [
+                "null",
+                "boolean"
+            ]
+        },
+        "findEnabled": {
+            "type": [
+                "null",
+                "boolean"
+            ]
+        },
+        "unique": {
+            "type": [
+                "null",
+                "boolean"
+            ]
+        },
+        "doesDataCopy": {
+            "type": [
+                "null",
+                "boolean"
+            ]
+        },
+        "fieldHelp": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "audited": {
+            "type": [
+                "null",
+                "boolean"
+            ]
+        },
+        "properties": {
+            "type": "object",
+            "properties": {
+                "primaryKey": {
+                    "type": [
+                        "null",
+                        "boolean"
+                    ]
+                },
+                "foreignKey": {
+                    "type": [
+                        "null",
+                        "boolean"
+                    ]
+                },
+                "numLines": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                },
+                "maxLength": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                },
+                "appendOnly": {
+                    "type": [
+                        "null",
+                        "boolean"
+                    ]
+                },
+                "allowHTML": {
+                    "type": [
+                        "null",
+                        "boolean"
+                    ]
+                },
+                "allowMentions": {
+                    "type": [
+                        "null",
+                        "boolean"
+                    ]
+                },
+                "sortAsGiven": {
+                    "type": [
+                        "null",
+                        "boolean"
+                    ]
+                },
+                "carryChoices": {
+                    "type": [
+                        "null",
+                        "boolean"
+                    ]
+                },
+                "allowNewChoices": {
+                    "type": [
+                        "null",
+                        "boolean"
+                    ]
+                },
+                "formula": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "defaultValue": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                }
+            }
+        },
+        "permissions": {
+            "type": [
+                "null",
+                "array"
+            ],
+            "items": {
+                "type": "object",
+                "properties": {
+                    "permissionType": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "role": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "roleId": {
+                        "type": [
+                            "null",
+                            "integer"
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}

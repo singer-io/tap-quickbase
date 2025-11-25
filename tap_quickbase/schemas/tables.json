@@ -1,1 +1,103 @@
-{}
+{
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "created": {
+            "type": [
+                "null",
+                "string"
+            ],
+            "format": "date-time"
+        },
+        "updated": {
+            "type": [
+                "null",
+                "string"
+            ],
+            "format": "date-time"
+        },
+        "alias": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "description": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "nextRecordId": {
+            "type": [
+                "null",
+                "integer"
+            ]
+        },
+        "nextFieldId": {
+            "type": [
+                "null",
+                "integer"
+            ]
+        },
+        "defaultSortFieldId": {
+            "type": [
+                "null",
+                "integer"
+            ]
+        },
+        "defaultSortOrder": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "keyFieldId": {
+            "type": [
+                "null",
+                "integer"
+            ]
+        },
+        "singleRecordName": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "pluralRecordName": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "sizeLimit": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "spaceUsed": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "spaceRemaining": {
+            "type": [
+                "null",
+                "string"
+            ]
+        }
+    }
+}
