@@ -1,293 +1,202 @@
 # tap-quickbase
 
-This is a [Singer](https://singer.io) tap that produces JSON-formatted data 
-following the [Singer spec](https://github.com/singer-io/getting-started/blob/master/SPEC.md).
+This is a [Singer](https://singer.io) tap that produces JSON-formatted data
+following the [Singer
+spec](https://github.com/singer-io/getting-started/blob/master/docs/SPEC.md).
 
 This tap:
-- Pulls raw data from Quickbase's [API](http://help.quickbase.com/api-guide/index.html)
-- Extracts data based on table/column specifications in properties.json
+
+- Pulls raw data from the [Quickbase API].
+- Extracts the following resources:
+    - [Apps](https://developer.quickbase.com/operation/getApp)
+
+    - [Events](https://developer.quickbase.com/operation/getAppEvents)
+
+    - [Roles](https://developer.quickbase.com/operation/getRoles)
+
+    - [AppTables](https://developer.quickbase.com/operation/getAppTables)
+
+    - [Tables](https://developer.quickbase.com/operation/getTable)
+
+    - [TableRelationships](https://developer.quickbase.com/operation/getRelationships)
+
+    - [TableReports](https://developer.quickbase.com/operation/getTableReports)
+
+    - [GetReports](https://developer.quickbase.com/operation/getReport)
+
+    - [Fields](https://developer.quickbase.com/operation/getFields)
+
+    - [GetFields](https://developer.quickbase.com/operation/getField)
+
+    - [FieldsUsage](https://developer.quickbase.com/operation/getFieldsUsage)
+
+    - [GetFieldUsage](https://developer.quickbase.com/operation/getFieldUsage)
+
 - Outputs the schema for each resource
 - Incrementally pulls data based on the input state
 
+
+## Streams
+
+
+**[apps](https://developer.quickbase.com/operation/getApp)**
+- Primary keys: ['id']
+- Replication strategy: INCREMENTAL
+
+**[events](https://developer.quickbase.com/operation/getAppEvents)**
+- Primary keys: ['id']
+- Replication strategy: FULL_TABLE
+
+**[roles](https://developer.quickbase.com/operation/getRoles)**
+- Primary keys: ['id']
+- Replication strategy: FULL_TABLE
+
+**[app_tables](https://developer.quickbase.com/operation/getAppTables)**
+- Primary keys: ['id']
+- Replication strategy: INCREMENTAL
+
+**[tables](https://developer.quickbase.com/operation/getTable)**
+- Primary keys: ['id']
+- Replication strategy: INCREMENTAL
+
+**[table_relationships](https://developer.quickbase.com/operation/getRelationships)**
+- Primary keys: ['id']
+- Replication strategy: FULL_TABLE
+
+**[table_reports](https://developer.quickbase.com/operation/getTableReports)**
+- Primary keys: ['id']
+- Replication strategy: FULL_TABLE
+
+**[get_reports](https://developer.quickbase.com/operation/getReport)**
+- Primary keys: ['id']
+- Replication strategy: FULL_TABLE
+
+**[fields](https://developer.quickbase.com/operation/getFields)**
+- Primary keys: ['id']
+- Replication strategy: FULL_TABLE
+
+**[get_fields](https://developer.quickbase.com/operation/getField)**
+- Primary keys: ['id']
+- Replication strategy: FULL_TABLE
+
+**[fields_usage](https://developer.quickbase.com/operation/getFieldsUsage)**
+- Primary keys: ['id']
+- Replication strategy: FULL_TABLE
+
+**[get_field_usage](https://developer.quickbase.com/operation/getFieldUsage)**
+- Primary keys: ['id']
+- Replication strategy: FULL_TABLE
+
+
+
+## Authentication
+
+## Quick Start
+
+1. Install
+
+    Clone this repository, and then install using setup.py. We recommend using a virtualenv:
+
     ```bash
-    mkvirtualenv -p python3 tap-quickbase
-    pip install git+https://github.com/flash716/tap-quickbase.git
-    tap-quickbase --config config.json --discover
-    tap-quickbase --config config.json --properties properties.json --state state.json
+    > virtualenv -p python3 venv
+    > source venv/bin/activate
+    > python setup.py install
+    OR
+    > cd .../tap-quickbase
+    > pip install -e .
+    ```
+2. Dependent libraries. The following dependent libraries were installed.
+    ```bash
+    > pip install singer-python
+    > pip install target-stitch
+    > pip install target-json
+
+    ```
+    - [singer-tools](https://github.com/singer-io/singer-tools)
+    - [target-stitch](https://github.com/singer-io/target-stitch)
+
+3. Create your tap's `config.json` file.  The tap config file for this tap should include these entries:
+   - `start_date` - the default value to use if no bookmark exists for an endpoint (rfc3339 date string)
+   - `user_agent` (string, optional): Process and email for API logging purposes. Example: `tap-quickbase <api_user_email@your_company.com>`
+   - `request_timeout` (integer, `300`): Max time for which request should wait to get a response. Default request_timeout is 300 seconds.
+
+    ```json
+    {
+        "start_date": "2019-01-01T00:00:00Z",
+        "user_agent": "tap-quickbase <api_user_email@your_company.com>",
+        "request_timeout": 300
+    }
     ```
 
-## Usage
+    Optionally, also create a `state.json` file. `currently_syncing` is an optional attribute used for identifying the last object to be synced in case the job is interrupted mid-stream. The next run would begin where the last job left off.
 
-**Install**
-
-```bash
-$ mkvirtualenv -p python3 tap-quickbase
-$ pip install tap-quickbase
-```
-or
-```bash
-$ git clone git@github.com:flash716/tap-quickbase.git
-$ cd tap-quickbase
-$ mkvirtualenv -p python3 tap-quickbase
-$ cd tap-quickbase
-$ pip install .
-```
-
-
-**Find your Quickbase Authentication Information**
-
-- Quickbase URL
-- AppID
-- [User Token](http://help.quickbase.com/api-guide/index.html#create_user_tokens.html)
-
-
-**Create a configuration file**
-
-Create a JSON file called `config.tap.json` containing the information you just 
-found as well as a default start_date to begin pulling data from.
-
-```json
-{
- "qb_url": "https://yoursubdomain.quickbase.com/db/",
- "qb_appid": "your_appid",
- "qb_user_token": "your_user_token",
- "start_date": "1970-01-01T00:00:01Z"
-}
-```
-
-
-**Discovery mode**
-
-The tap can be invoked in discovery mode to find the available tables and columns 
-in the app's data.
-
-```bash
-$ tap-quickbase --config config.tap.json --discover > properties.json
-```
-
-A discovered catalog is output via stdout to `properties.json`, with a JSON-schema 
-description of each table. A source table directly corresponds to a Singer stream.
-
-```json
-{
-  "streams": [
+    ```json
     {
-      "type": "object",
-      "key_properties": [
-        "rid"
-      ],
-      "stream_alias": "table_name",
-      "table_name": "table_id",
-      "tap_stream_id": "app_name__table_name",
-      "stream": "app_name__table_name",
-      "schema": {
-        "properties": {
-          "rid": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "inclusion": "automatic"
-          },
-          "datecreated": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time",
-            "inclusion": "automatic"
-          },
-          "datemodified": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time",
-            "inclusion": "automatic"
-          },
-          "companyid": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "inclusion": "available"
-          }
+        "currently_syncing": "engage",
+        "bookmarks": {
+            "export": "2019-09-27T22:34:39.000000Z",
+            "funnels": "2019-09-28T15:30:26.000000Z",
+            "revenue": "2019-09-28T18:23:53Z"
         }
-      },
-      "metadata": [
-        {
-          "metadata": {
-            "tap-quickbase.app_id": "app_id"
-          },
-          "breadcrumb": []
-        },
-        {
-          "metadata": {
-            "tap-quickbase.id": "1"
-          },
-          "breadcrumb": [
-            "properties",
-            "datecreated"
-          ]
-        },
-        {
-          "metadata": {
-            "tap-quickbase.id": "2"
-          },
-          "breadcrumb": [
-            "properties",
-            "datemodified"
-          ]
-        },
-        {
-          "metadata": {
-            "tap-quickbase.id": "6"
-          },
-          "breadcrumb": [
-            "properties",
-            "companyid"
-          ]
-        }
-      ]
-    } 
-  ]
-}
-```
+    }
+    ```
 
-**Field selection**
+4. Run the Tap in Discovery Mode
+    This creates a catalog.json for selecting objects/fields to integrate:
+    ```bash
+    tap-quickbase --config config.json --discover > catalog.json
+    ```
+   See the Singer docs on discovery mode
+   [here](https://github.com/singer-io/getting-started/blob/master/docs/DISCOVERY_MODE.md#discovery-mode).
 
-In sync mode, `tap-quickbase` consumes a modified version of the catalog where 
-tables and fields have been marked as _selected_.
+5. Run the Tap in Sync Mode (with catalog) and [write out to state file](https://github.com/singer-io/getting-started/blob/master/docs/RUNNING_AND_DEVELOPING.md#running-a-singer-tap-with-a-singer-target)
 
-Redirect output from the tap's discovery mode to a file so that it can be
-modified:
+    For Sync mode:
+    ```bash
+    > tap-quickbase --config tap_config.json --catalog catalog.json > state.json
+    > tail -1 state.json > state.json.tmp && mv state.json.tmp state.json
+    ```
+    To load to json files to verify outputs:
+    ```bash
+    > tap-quickbase --config tap_config.json --catalog catalog.json | target-json > state.json
+    > tail -1 state.json > state.json.tmp && mv state.json.tmp state.json
+    ```
+    To pseudo-load to [Stitch Import API](https://github.com/singer-io/target-stitch) with dry run:
+    ```bash
+    > tap-quickbase --config tap_config.json --catalog catalog.json | target-stitch --config target_config.json --dry-run > state.json
+    > tail -1 state.json > state.json.tmp && mv state.json.tmp state.json
+    ```
 
-```bash
-$ tap-quickbase -c config.tap.json --discover > properties.json
-```
+6. Test the Tap
+    While developing the quickbase tap, the following utilities were run in accordance with Singer.io best practices:
+    Pylint to improve [code quality](https://github.com/singer-io/getting-started/blob/master/docs/BEST_PRACTICES.md#code-quality):
+    ```bash
+    > pylint tap_quickbase -d missing-docstring -d logging-format-interpolation -d too-many-locals -d too-many-arguments
+    ```
+    Pylint test resulted in the following score:
+    ```bash
+    Your code has been rated at 9.67/10
+    ```
 
-Then edit `properties.json` to make selections. 
-In this example we want the `table_name` table. 
-The stream's schema gets a top-level `selected` flag, as does its columns' schemas:
+    To [check the tap](https://github.com/singer-io/singer-tools#singer-check-tap) and verify working:
+    ```bash
+    > tap_quickbase --config tap_config.json --catalog catalog.json | singer-check-tap > state.json
+    > tail -1 state.json > state.json.tmp && mv state.json.tmp state.json
+    ```
 
-```json
-{
-  "streams": [
-    {
-      "type": "object",
-      "selected": "true",
-      "key_properties": [
-        "rid"
-      ],
-      "stream_alias": "table_name",
-      "table_name": "table_id",
-      "tap_stream_id": "app_name__table_name",
-      "stream": "app_name__table_name",
-      "schema": {
-        "properties": {
-          "rid": {
-            "selected": "true",
-            "type": [
-              "null",
-              "string"
-            ],
-            "inclusion": "automatic"
-          },
-          "datecreated": {
-            "selected": "true",
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time",
-            "inclusion": "automatic"
-          },
-          "datemodified": {
-            "selected": "true",
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time",
-            "inclusion": "automatic"
-          },
-          "companyid": {
-            "selected": "true",
-            "type": [
-              "null",
-              "string"
-            ],
-            "inclusion": "available"
-          }
-        }
-      },
-      "metadata": [
-        {
-          "metadata": {
-            "tap-quickbase.id": "1"
-          },
-          "breadcrumb": [
-            "properties",
-            "datecreated"
-          ]
-        },
-        {
-          "metadata": {
-            "tap-quickbase.id": "2"
-          },
-          "breadcrumb": [
-            "properties",
-            "datemodified"
-          ]
-        },
-        {
-          "metadata": {
-            "tap-quickbase.id": "6"
-          },
-          "breadcrumb": [
-            "properties",
-            "companyid"
-          ]
-        }
-      ]
-    } 
-  ]
-}
-```
+    #### Unit Tests
 
-**Sync mode**
+    Unit tests may be run with the following.
 
-With an annotated properties catalog, the tap can be invoked in sync mode:
+    ```
+    python -m pytest --verbose
+    ```
 
-```bash
-$ tap-quickbase -c config.tap.json --properties properties.json
-```
+    Note, you may need to install test dependencies.
 
-Messages are written to standard output following the Singer specification. 
-The resultant stream of JSON data can be consumed by a Singer target:
-
-```bash
-$ tap-quickbase -c config.tap.json --properties properties.json | target-stitch --config config.target.json
-```
-
-## Replication methods and state file
-
-In the above example, we invoked `tap-quickbase` without providing a _state_ file
-and without specifying a replication method. The two ways to replicate a given
-table are `FULL_TABLE` and `INCREMENTAL`. `FULL_TABLE` replication is used by
-default.
-
-### Full Table
-
-Full-table replication extracts all data from the source table each time the tap
-is invoked.
-
-### Incremental
-
-Incremental replication works in conjunction with a state file to only extract
-new records each time the tap is invoked.
-
-
+    ```
+    pip install -e .'[dev]'
+    ```
 ---
 
-Copyright &copy; 2018 Stitch
+Copyright &copy; 2019 Stitch
