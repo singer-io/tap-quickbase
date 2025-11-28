@@ -1,1 +1,192 @@
-{}
+{
+    "type": "object",
+    "properties": {
+        "actions": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        },
+        "appHomePages": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        },
+        "dashboards": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        },
+        "defaultReports": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        },
+        "exactForms": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        },
+        "fields": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        },
+        "forms": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        },
+        "notifications": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        },
+        "personalReports": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        },
+        "pipelines": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        },
+        "relationships": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        },
+        "reminders": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        },
+        "reports": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        },
+        "roles": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        },
+        "tableImports": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        },
+        "tableRules": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        },
+        "webhooks": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        }
+    }
+}
