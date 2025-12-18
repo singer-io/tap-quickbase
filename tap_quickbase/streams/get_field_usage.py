@@ -7,4 +7,5 @@ class GetFieldUsage(FullTableStream):
     replication_keys = []
     path = "v1/fields/usage/{fieldId}?tableId={tableId}"
     parent = "fields_usage"
+    page_size = None  # Single resource endpoint
 

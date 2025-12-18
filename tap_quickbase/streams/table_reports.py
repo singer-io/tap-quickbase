@@ -6,5 +6,5 @@ class TableReports(FullTableStream):
     replication_method = "FULL_TABLE"
     replication_keys = []
     path = "v1/reports?tableId={tableId}"
-    parent = "tables"
-
+    parent = "app_tables"
+    # Note: get_reports removed since table_reports already provides complete report information

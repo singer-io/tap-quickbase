@@ -7,4 +7,5 @@ class TableRelationships(FullTableStream):
     replication_keys = []
     data_key = "relationships"
     path = "v1/tables/{tableId}/relationships"
+    parent = "app_tables"
 

@@ -29,13 +29,14 @@ class BaseStream(ABC):
     url_endpoint = ""
     path = ""
     page_size = 100
-    next_page_key = "next"
-    headers = {'Accept': 'application/json'}
+    # QuickBase uses skip for pagination, not next
+    skip_key = "skip"
+    headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
     children = []
     parent = ""
-    data_key = ""
+    data_key = ""  # Key to extract records from response
     parent_bookmark_key = ""
-    http_method = "POST"
+    http_method = "GET"  # Default: Most QuickBase endpoints are GET
 
     def __init__(self, client=None, catalog=None) -> None:
         self.client = client
@@ -99,22 +100,58 @@ class BaseStream(ABC):
 
     def get_records(self) -> Iterator:
         """Interacts with api client interaction and pagination."""
-        self.params["page"] = self.page_size
-        next_page = 1
-        while next_page:
+        skip = 0
+        has_more = True
+        
+        while has_more:
+            # For single resource endpoints (page_size=None), don't add pagination params
+            if self.page_size is not None:
+                if self.http_method == "POST":
+                    self.data_payload["skip"] = skip
+                    self.data_payload["top"] = self.page_size
+                else:
+                    self.params["skip"] = skip
+                    self.params["top"] = self.page_size
+                    
             response = self.client.make_request(
                 self.http_method,
                 self.url_endpoint,
                 self.params,
                 self.headers,
-                body=json.dumps(self.data_payload),
+                body=json.dumps(self.data_payload) if self.data_payload else None,
                 path=self.path
             )
-            raw_records = response.get(self.data_key, [])
-            next_page = response.get(self.next_page_key)
-
-            self.params[self.next_page_key] = next_page
+            
+            # Extract records based on data_key or directly from response
+            if self.data_key:
+                raw_records = response.get(self.data_key, [])
+            elif isinstance(response, list):
+                raw_records = response
+            else:
+                # If no data_key and response is dict, it might be a single object
+                raw_records = [response] if response else []
+            
+            # Check pagination metadata
+            metadata = response.get("metadata", {}) if isinstance(response, dict) else {}
+            total_records = metadata.get("totalRecords", 0)
+            num_records = metadata.get("numRecords", len(raw_records))
+            
+            # Yield records
             yield from raw_records
+            
+            # For single resource endpoints, only fetch once
+            if self.page_size is None:
+                has_more = False
+            else:
+                # Update skip and check if more records exist
+                skip += num_records
+                
+                # Continue if we got records and haven't reached total
+                if isinstance(response, list):
+                    # For list responses without metadata, stop if we got fewer than requested
+                    has_more = len(raw_records) >= self.page_size
+                else:
+                    has_more = skip < total_records and num_records > 0
 
     def write_schema(self) -> None:
         """
@@ -190,7 +227,6 @@ class IncrementalStream(BaseStream):
         bookmark_date = self.get_bookmark(state, self.tap_stream_id)
         current_max_bookmark_date = bookmark_date
         self.update_params(updated_since=bookmark_date)
-        self.update_data_payload(parent_obj)
         self.url_endpoint = self.get_url_endpoint(parent_obj)
 
         with metrics.record_counter(self.tap_stream_id) as counter:
@@ -218,9 +254,41 @@ class IncrementalStream(BaseStream):
 
 
 class FullTableStream(BaseStream):
-    """Base Class for Incremental Stream."""
+    """Base Class for Full Table Stream."""
 
     replication_keys = []
+    
+    def get_url_endpoint(self, parent_obj=None):
+        """Prepare URL endpoint for streams, with support for parent object formatting."""
+        if parent_obj is None:
+            return f"{self.client.base_url}/{self.path}"
+        
+        # Format path with parent object data
+        formatted_path = self.path
+        
+        # Handle appId - always use from config if available
+        if '{appId}' in formatted_path:
+            app_id = str(self.client.config.get('appId', parent_obj.get('id', '')))
+            formatted_path = formatted_path.replace('{appId}', app_id)
+            
+        # Handle tableId from parent
+        if '{tableId}' in formatted_path:
+            # For reports, tableId is nested in query object
+            if 'query' in parent_obj and 'tableId' in parent_obj.get('query', {}):
+                table_id = str(parent_obj['query']['tableId'])
+            else:
+                table_id = str(parent_obj.get('id', ''))
+            formatted_path = formatted_path.replace('{tableId}', table_id)
+            
+        # Handle fieldId from parent
+        if '{fieldId}' in formatted_path:
+            formatted_path = formatted_path.replace('{fieldId}', str(parent_obj.get('id', '')))
+            
+        # Handle reportId from parent
+        if '{reportId}' in formatted_path:
+            formatted_path = formatted_path.replace('{reportId}', str(parent_obj.get('id', '')))
+            
+        return f"{self.client.base_url}/{formatted_path}"
 
     def sync(
         self,
@@ -230,7 +298,6 @@ class FullTableStream(BaseStream):
     ) -> Dict:
         """Abstract implementation for `type: Fulltable` stream."""
         self.url_endpoint = self.get_url_endpoint(parent_obj)
-        self.update_data_payload(parent_obj)
         with metrics.record_counter(self.tap_stream_id) as counter:
             for record in self.get_records():
                 transformed_record = transformer.transform(
@@ -291,7 +358,35 @@ class ChildBaseStream(IncrementalStream):
 
     def get_url_endpoint(self, parent_obj=None):
         """Prepare URL endpoint for child streams."""
-        return f"{self.client.base_url}/{self.path.format(parent_obj['id'])}"
+        if parent_obj is None:
+            return f"{self.client.base_url}/{self.path}"
+        
+        # Format path with parent object data
+        formatted_path = self.path
+        
+        # Handle appId - always use from config if available
+        if '{appId}' in formatted_path:
+            app_id = str(self.client.config.get('appId', parent_obj.get('id', '')))
+            formatted_path = formatted_path.replace('{appId}', app_id)
+            
+        # Handle tableId from parent
+        if '{tableId}' in formatted_path:
+            # For reports, tableId is nested in query object
+            if 'query' in parent_obj and 'tableId' in parent_obj.get('query', {}):
+                table_id = str(parent_obj['query']['tableId'])
+            else:
+                table_id = str(parent_obj.get('id', ''))
+            formatted_path = formatted_path.replace('{tableId}', table_id)
+            
+        # Handle fieldId from parent
+        if '{fieldId}' in formatted_path:
+            formatted_path = formatted_path.replace('{fieldId}', str(parent_obj.get('id', '')))
+            
+        # Handle reportId from parent
+        if '{reportId}' in formatted_path:
+            formatted_path = formatted_path.replace('{reportId}', str(parent_obj.get('id', '')))
+            
+        return f"{self.client.base_url}/{formatted_path}"
 
     def get_bookmark(self, state: Dict, stream: str, key: Any = None) -> int:
         """Singleton bookmark value for child streams."""

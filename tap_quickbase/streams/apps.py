@@ -6,4 +6,14 @@ class Apps(IncrementalStream):
     replication_method = "INCREMENTAL"
     replication_keys = ["updated"]
     path = "v1/apps/{appId}"
+    children = ["events", "roles", "app_tables"]
+    page_size = None  # Single app endpoint, no pagination needed
+    
+    def get_url_endpoint(self, parent_obj=None):
+        """Get app by ID from config"""
+        app_id = self.client.config.get('appId')
+        if not app_id:
+            raise ValueError("appId is required in config to sync apps")
+        path = self.path.replace('{appId}', app_id)
+        return f"{self.client.base_url}/{path}"
 

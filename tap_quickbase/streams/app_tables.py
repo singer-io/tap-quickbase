@@ -8,4 +8,5 @@ class AppTables(ChildBaseStream):
     path = "v1/tables?appId={appId}"
     parent = "apps"
     bookmark_value = None
-
+    children = ["tables", "table_relationships", "table_reports", "fields", "fields_usage"]
+    # Note: get_fields, get_field_usage, get_reports removed - they need both parent ID and tableId
