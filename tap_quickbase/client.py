@@ -113,25 +113,24 @@ class Client:
     ) -> Optional[Mapping[Any, Any]]:
         """Performs HTTP Operations."""
         method = method.upper()
-        with metrics.http_request_timer(endpoint):
-            if method in ("GET", "POST"):
-                if method == "GET":
-                    # For GET requests, remove data/body parameters
-                    kwargs.pop("data", None)
-                    kwargs.pop("json", None)
-                else:
-                    # For POST requests, use json parameter instead of data
-                    if "data" in kwargs:
-                        import json as json_lib
-                        if isinstance(kwargs["data"], str):
-                            kwargs["json"] = json_lib.loads(kwargs["data"])
-                        else:
-                            kwargs["json"] = kwargs["data"]
-                        kwargs.pop("data")
-                response = self._session.request(method, endpoint, **kwargs)
-                raise_for_error(response)
+        if method not in ("GET", "POST"):
+            raise ValueError(f"Unsupported method: {method}")
+        
+        # Handle request body for different methods
+        if method == "GET":
+            kwargs.pop("data", None)
+            kwargs.pop("json", None)
+        elif "data" in kwargs:
+            import json as json_lib
+            data = kwargs.pop("data")
+            if isinstance(data, str):
+                kwargs["json"] = json_lib.loads(data)
             else:
-                raise ValueError(f"Unsupported method: {method}")
+                kwargs["json"] = data
+        
+        with metrics.http_request_timer(endpoint):
+            response = self._session.request(method, endpoint, **kwargs)
+            raise_for_error(response)
 
         return response.json()
 

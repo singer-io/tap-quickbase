@@ -101,17 +101,12 @@ class BaseStream(ABC):
     def get_records(self) -> Iterator:
         """Interacts with api client interaction and pagination."""
         skip = 0
-        has_more = True
         
-        while has_more:
-            # For single resource endpoints (page_size=None), don't add pagination params
+        while True:
+            # Add pagination params if this is a paginated endpoint
             if self.page_size is not None:
-                if self.http_method == "POST":
-                    self.data_payload["skip"] = skip
-                    self.data_payload["top"] = self.page_size
-                else:
-                    self.params["skip"] = skip
-                    self.params["top"] = self.page_size
+                target = self.data_payload if self.http_method == "POST" else self.params
+                target.update({"skip": skip, "top": self.page_size})
                     
             response = self.client.make_request(
                 self.http_method,
@@ -122,36 +117,32 @@ class BaseStream(ABC):
                 path=self.path
             )
             
-            # Extract records based on data_key or directly from response
-            if self.data_key:
-                raw_records = response.get(self.data_key, [])
-            elif isinstance(response, list):
-                raw_records = response
-            else:
-                # If no data_key and response is dict, it might be a single object
-                raw_records = [response] if response else []
-            
-            # Check pagination metadata
-            metadata = response.get("metadata", {}) if isinstance(response, dict) else {}
-            total_records = metadata.get("totalRecords", 0)
-            num_records = metadata.get("numRecords", len(raw_records))
-            
-            # Yield records
+            # Extract records from response
+            raw_records = self._extract_records(response)
             yield from raw_records
             
-            # For single resource endpoints, only fetch once
+            # Stop pagination for single resource endpoints
             if self.page_size is None:
-                has_more = False
-            else:
-                # Update skip and check if more records exist
-                skip += num_records
-                
-                # Continue if we got records and haven't reached total
-                if isinstance(response, list):
-                    # For list responses without metadata, stop if we got fewer than requested
-                    has_more = len(raw_records) >= self.page_size
-                else:
-                    has_more = skip < total_records and num_records > 0
+                break
+            
+            # Check if more records exist
+            num_records = len(raw_records)
+            skip += num_records
+            
+            if isinstance(response, dict) and "metadata" in response:
+                total_records = response["metadata"].get("totalRecords", 0)
+                if skip >= total_records or num_records == 0:
+                    break
+            elif num_records < self.page_size:
+                break
+    
+    def _extract_records(self, response) -> List:
+        """Extract records from API response."""
+        if self.data_key:
+            return response.get(self.data_key, [])
+        if isinstance(response, list):
+            return response
+        return [response] if response else []
 
     def write_schema(self) -> None:
         """
@@ -185,9 +176,30 @@ class BaseStream(ABC):
 
     def get_url_endpoint(self, parent_obj: Dict = None) -> str:
         """
-        Get the URL endpoint for the stream
+        Get the URL endpoint for the stream, handling path parameters.
         """
-        return self.url_endpoint or f"{self.client.base_url}/{self.path}"
+        if parent_obj is None:
+            return f"{self.client.base_url}/{self.path}"
+        
+        formatted_path = self.path
+        replacements = {
+            '{appId}': str(self.client.config.get('appId', parent_obj.get('id', ''))),
+            '{tableId}': self._get_table_id(parent_obj),
+            '{fieldId}': str(parent_obj.get('id', '')),
+            '{reportId}': str(parent_obj.get('id', ''))
+        }
+        
+        for placeholder, value in replacements.items():
+            if placeholder in formatted_path:
+                formatted_path = formatted_path.replace(placeholder, value)
+        
+        return f"{self.client.base_url}/{formatted_path}"
+    
+    def _get_table_id(self, parent_obj: Dict) -> str:
+        """Extract tableId from parent object, handling nested query structure."""
+        if 'query' in parent_obj and 'tableId' in parent_obj.get('query', {}):
+            return str(parent_obj['query']['tableId'])
+        return str(parent_obj.get('id', ''))
 
 
 class IncrementalStream(BaseStream):
@@ -257,38 +269,6 @@ class FullTableStream(BaseStream):
     """Base Class for Full Table Stream."""
 
     replication_keys = []
-    
-    def get_url_endpoint(self, parent_obj=None):
-        """Prepare URL endpoint for streams, with support for parent object formatting."""
-        if parent_obj is None:
-            return f"{self.client.base_url}/{self.path}"
-        
-        # Format path with parent object data
-        formatted_path = self.path
-        
-        # Handle appId - always use from config if available
-        if '{appId}' in formatted_path:
-            app_id = str(self.client.config.get('appId', parent_obj.get('id', '')))
-            formatted_path = formatted_path.replace('{appId}', app_id)
-            
-        # Handle tableId from parent
-        if '{tableId}' in formatted_path:
-            # For reports, tableId is nested in query object
-            if 'query' in parent_obj and 'tableId' in parent_obj.get('query', {}):
-                table_id = str(parent_obj['query']['tableId'])
-            else:
-                table_id = str(parent_obj.get('id', ''))
-            formatted_path = formatted_path.replace('{tableId}', table_id)
-            
-        # Handle fieldId from parent
-        if '{fieldId}' in formatted_path:
-            formatted_path = formatted_path.replace('{fieldId}', str(parent_obj.get('id', '')))
-            
-        # Handle reportId from parent
-        if '{reportId}' in formatted_path:
-            formatted_path = formatted_path.replace('{reportId}', str(parent_obj.get('id', '')))
-            
-        return f"{self.client.base_url}/{formatted_path}"
 
     def sync(
         self,
@@ -300,6 +280,7 @@ class FullTableStream(BaseStream):
         self.url_endpoint = self.get_url_endpoint(parent_obj)
         with metrics.record_counter(self.tap_stream_id) as counter:
             for record in self.get_records():
+                record = self.modify_object(record, parent_obj)
                 transformed_record = transformer.transform(
                     record, self.schema, self.metadata
                 )
@@ -355,38 +336,6 @@ class ParentBaseStream(IncrementalStream):
 
 class ChildBaseStream(IncrementalStream):
     """Base Class for Child Stream."""
-
-    def get_url_endpoint(self, parent_obj=None):
-        """Prepare URL endpoint for child streams."""
-        if parent_obj is None:
-            return f"{self.client.base_url}/{self.path}"
-        
-        # Format path with parent object data
-        formatted_path = self.path
-        
-        # Handle appId - always use from config if available
-        if '{appId}' in formatted_path:
-            app_id = str(self.client.config.get('appId', parent_obj.get('id', '')))
-            formatted_path = formatted_path.replace('{appId}', app_id)
-            
-        # Handle tableId from parent
-        if '{tableId}' in formatted_path:
-            # For reports, tableId is nested in query object
-            if 'query' in parent_obj and 'tableId' in parent_obj.get('query', {}):
-                table_id = str(parent_obj['query']['tableId'])
-            else:
-                table_id = str(parent_obj.get('id', ''))
-            formatted_path = formatted_path.replace('{tableId}', table_id)
-            
-        # Handle fieldId from parent
-        if '{fieldId}' in formatted_path:
-            formatted_path = formatted_path.replace('{fieldId}', str(parent_obj.get('id', '')))
-            
-        # Handle reportId from parent
-        if '{reportId}' in formatted_path:
-            formatted_path = formatted_path.replace('{reportId}', str(parent_obj.get('id', '')))
-            
-        return f"{self.client.base_url}/{formatted_path}"
 
     def get_bookmark(self, state: Dict, stream: str, key: Any = None) -> int:
         """Singleton bookmark value for child streams."""

@@ -7,6 +7,17 @@ class FieldsUsage(FullTableStream):
     replication_keys = []
     path = "v1/fields/usage?tableId={tableId}"
     parent = "app_tables"
-    # Note: get_field_usage removed as child since it requires tableId which is not available in fields_usage records
+    
+    def modify_object(self, record, parent_record=None):
+        """Flatten the API response structure - merge field and usage objects."""
+        if not record:
+            return record
+        
+        # Extract field info and usage stats
+        field = record.get('field', {})
+        usage = record.get('usage', {})
+        
+        # Merge them with field.id as the primary key
+        return {'id': field.get('id'), **usage}
 
 
