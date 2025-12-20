@@ -17,8 +17,8 @@ class QuickbaseInterruptedSyncTest(QuickbaseBaseTest):
 
     def manipulate_state(self):
         return {
-            "currently_syncing": "prospects",
+            "currently_syncing": "apps",
             "bookmarks": {
+            }
         }
-    }
 

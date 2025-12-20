@@ -17,7 +17,7 @@ class QuickbaseBaseTest(BaseCase):
     Metadata describing streams. A bunch of shared methods that are used
     in tap-tester tests. Shared tap-specific methods (as needed).
     """
-    start_date = "2019-01-01T00:00:00Z"
+    start_date = "2025-12-18T00:00:00Z"
     PARENT_TAP_STREAM_ID = "parent-tap-stream-id"
 
     @staticmethod
@@ -142,7 +142,7 @@ class QuickbaseBaseTest(BaseCase):
     def get_properties(self, original: bool = True):
         """Configuration of properties required for the tap."""
         return_value = {
-            "start_date": "2022-07-01T00:00:00Z"
+            "start_date": "2025-12-18T00:00:00Z"
         }
         if original:
             return return_value
