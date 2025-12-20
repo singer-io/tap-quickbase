@@ -69,19 +69,47 @@ class TestClient(unittest.TestCase):
 
 
     @patch("tap_quickbase.client.Client._Client__make_request")
-    def test_client_get(self, mock_make_request):
+    def test_client_make_request_get(self, mock_make_request):
+        """Test make_request with GET method."""
         mock_make_request.return_value = {"data": "ok"}
-        result = self.client.get("https://api.example.com/resource")
+        result = self.client.make_request("GET", "https://api.example.com/resource")
         assert result == {"data": "ok"}
         mock_make_request.assert_called_once()
 
-
     @patch("tap_quickbase.client.Client._Client__make_request")
-    def test_client_post(self, mock_make_request):
+    def test_client_make_request_post(self, mock_make_request):
+        """Test make_request with POST method."""
         mock_make_request.return_value = {"created": True}
-        result = self.client.post("https://api.example.com/resource", body={"key": "value"})
+        result = self.client.make_request("POST", "https://api.example.com/resource", body={"key": "value"})
         assert result == {"created": True}
         mock_make_request.assert_called_once()
+
+    def test_get_request_removes_json_body(self):
+        """Test that GET requests don't send JSON body."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"data": "test"}
+        
+        with patch.object(self.client._session, "request", return_value=mock_response) as mock_request:
+            self.client._Client__make_request("GET", "https://api.example.com/resource", json={"should": "be_removed"})
+            
+            # Verify 'json' is not in kwargs
+            call_kwargs = mock_request.call_args.kwargs
+            self.assertNotIn("json", call_kwargs)
+            self.assertNotIn("data", call_kwargs)
+
+    def test_post_request_converts_string_to_json(self):
+        """Test that POST requests convert string data to JSON."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"success": True}
+        
+        with patch.object(self.client._session, "request", return_value=mock_response) as mock_request:
+            self.client._Client__make_request("POST", "https://api.example.com/resource", data='{"key": "value"}')
+            
+            call_kwargs = mock_request.call_args.kwargs
+            self.assertIn("json", call_kwargs)
+            self.assertNotIn("data", call_kwargs)
 
     @parameterized.expand([
         ["400 error", 400, MockResponse(400), QuickbaseBadRequestError, "A validation exception has occurred."],
