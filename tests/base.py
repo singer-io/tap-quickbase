@@ -132,7 +132,11 @@ class QuickbaseBaseTest(BaseCase):
     def get_credentials():
         """Authentication information for the test account."""
         credentials_dict = {}
-        creds = {'user_token': 'TAP_QUICKBASE_USER_TOKEN'}
+        creds = {
+            'access_token': 'TAP_QUICKBASE_ACCESS_TOKEN',
+            'realm_hostname': 'TAP_QUICKBASE_REALM_HOSTNAME',
+            'appId': 'TAP_QUICKBASE_APP_ID'
+        }
 
         for cred in creds:
             credentials_dict[cred] = os.getenv(creds[cred])
