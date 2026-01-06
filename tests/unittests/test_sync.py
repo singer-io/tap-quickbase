@@ -4,98 +4,152 @@ from tap_quickbase.sync import write_schema, sync, update_currently_syncing
 
 class TestSync(unittest.TestCase):
 
-    def test_write_schema_only_parent_selected(self):
+    @patch('tap_quickbase.sync.STREAMS')
+    def test_write_schema_only_parent_selected(self, mock_streams):
         mock_stream = MagicMock()
         mock_stream.is_selected.return_value = True
-        mock_stream.children = ["invoice_payments", "invoice_line_items"]
+        mock_stream.children = ["events", "roles"]
         mock_stream.child_to_sync = []
 
         client = MagicMock()
         catalog = MagicMock()
+        mock_child = MagicMock()
         catalog.get_stream.return_value = MagicMock()
+        mock_streams.__getitem__.return_value = lambda c, cat: mock_child
 
         write_schema(mock_stream, client, [], catalog)
 
         mock_stream.write_schema.assert_called_once()
         self.assertEqual(len(mock_stream.child_to_sync), 0)
 
-    def test_write_schema_parent_child_both_selected(self):
+    @patch('tap_quickbase.sync.STREAMS')
+    def test_write_schema_parent_child_both_selected(self, mock_streams):
         mock_stream = MagicMock()
         mock_stream.is_selected.return_value = True
-        mock_stream.children = ["invoice_payments", "invoice_line_items"]
+        mock_stream.children = ["events", "roles"]
         mock_stream.child_to_sync = []
 
         client = MagicMock()
         catalog = MagicMock()
+        mock_child = MagicMock()
         catalog.get_stream.return_value = MagicMock()
+        mock_streams.__getitem__.return_value = lambda c, cat: mock_child
 
-        write_schema(mock_stream, client, ["invoice_payments"], catalog)
+        write_schema(mock_stream, client, ["events"], catalog)
 
         mock_stream.write_schema.assert_called_once()
         self.assertEqual(len(mock_stream.child_to_sync), 1)
 
-    def test_write_schema_child_selected(self):
+    @patch('tap_quickbase.sync.STREAMS')
+    def test_write_schema_child_selected(self, mock_streams):
         mock_stream = MagicMock()
         mock_stream.is_selected.return_value = False
-        mock_stream.children = ["invoice_payments", "invoice_line_items"]
+        mock_stream.children = ["events", "roles"]
         mock_stream.child_to_sync = []
 
         client = MagicMock()
         catalog = MagicMock()
+        mock_child = MagicMock()
         catalog.get_stream.return_value = MagicMock()
+        mock_streams.__getitem__.return_value = lambda c, cat: mock_child
 
-        write_schema(mock_stream, client, ["invoice_payments", "invoice_line_items"], catalog)
+        write_schema(mock_stream, client, ["events", "roles"], catalog)
 
         self.assertEqual(mock_stream.write_schema.call_count, 0)
         self.assertEqual(len(mock_stream.child_to_sync), 2)
 
+    @patch('tap_quickbase.sync.STREAMS')
     @patch("singer.write_schema")
     @patch("singer.get_currently_syncing")
     @patch("singer.Transformer")
     @patch("singer.write_state")
-    @patch("tap_quickbase.streams.abstracts.IncrementalStream.sync")
-    def test_sync_stream1_called(self, mock_sync, mock_write_state, mock_transformer, mock_get_currently_syncing, mock_write_schema):
+    def test_sync_stream1_called(self, mock_write_state, mock_transformer, mock_get_currently_syncing, mock_write_schema, mock_streams):
         mock_catalog = MagicMock()
-        invoice_stream = MagicMock()
-        invoice_stream.stream = "invoices"
-        expense_stream = MagicMock()
-        expense_stream.stream = "expenses"
-        mock_catalog.get_selected_streams.return_value = [
-            invoice_stream,
-            expense_stream
-        ]
+        apps_stream = MagicMock()
+        apps_stream.stream = "apps"
+        apps_stream.parent = None
+        
+        tables_stream = MagicMock()
+        tables_stream.stream = "tables"
+        tables_stream.parent = None
+        
+        mock_catalog.get_selected_streams.return_value = [apps_stream, tables_stream]
         state = {}
 
+        # Mock the STREAMS dictionary to return mock stream class that creates instances
+        mock_stream_instance = MagicMock()
+        mock_stream_instance.parent = None
+        mock_stream_instance.children = []
+        mock_stream_instance.child_to_sync = []
+        mock_stream_instance.is_selected.return_value = True
+        mock_stream_instance.sync.return_value = 10  # Return a count
+        mock_stream_instance.write_schema.return_value = None
+        
+        mock_stream_class = MagicMock(return_value=mock_stream_instance)
+        mock_streams.__getitem__ = MagicMock(return_value=mock_stream_class)
+
         client = MagicMock()
+        client.config = {'appId': 'test_app_id', 'start_date': '2024-01-01T00:00:00Z'}
         config = {}
 
         sync(client, config, mock_catalog, state)
 
-        self.assertEqual(mock_sync.call_count, 2)
+        self.assertEqual(mock_stream_instance.sync.call_count, 2)
 
+    @patch('tap_quickbase.sync.STREAMS')
     @patch("singer.write_schema")
     @patch("singer.get_currently_syncing")
     @patch("singer.Transformer")
     @patch("singer.write_state")
-    @patch("tap_quickbase.streams.abstracts.IncrementalStream.sync")
-    def test_sync_child_selected(self, mock_sync, mock_write_state, mock_transformer, mock_get_currently_syncing, mock_write_schema):
+    def test_sync_child_selected(self, mock_write_state, mock_transformer, mock_get_currently_syncing, mock_write_schema, mock_streams):
         mock_catalog = MagicMock()
-        invoice_messages_stream = MagicMock()
-        invoice_messages_stream.stream = "invoice_messages"
-        invoice_payments_stream = MagicMock()
-        invoice_payments_stream.stream = "invoice_payments"
+        events_stream = MagicMock()
+        events_stream.stream = "events"
+        roles_stream = MagicMock()
+        roles_stream.stream = "roles"
         mock_catalog.get_selected_streams.return_value = [
-            invoice_messages_stream,
-            invoice_payments_stream
+            events_stream,
+            roles_stream
         ]
         state = {}
 
+        # Mock child stream instances (events and roles have parent = "apps")
+        mock_child_instance = MagicMock()
+        mock_child_instance.parent = "apps"  # Child streams have a parent
+        mock_child_instance.children = []
+        mock_child_instance.child_to_sync = []
+        mock_child_instance.is_selected.return_value = True
+        mock_child_instance.sync.return_value = 5
+        mock_child_instance.write_schema.return_value = None
+        
+        # Mock parent stream instance (apps)
+        mock_parent_instance = MagicMock()
+        mock_parent_instance.parent = None  # Parent streams have no parent
+        mock_parent_instance.children = ["events", "roles"]
+        mock_parent_instance.child_to_sync = []
+        mock_parent_instance.is_selected.return_value = True
+        mock_parent_instance.sync.return_value = 10
+        mock_parent_instance.write_schema.return_value = None
+        
+        # Return child for events/roles, parent for apps
+        def get_stream_class(stream_name):
+            if stream_name == "apps":
+                return MagicMock(return_value=mock_parent_instance)
+            else:
+                return MagicMock(return_value=mock_child_instance)
+        
+        mock_streams.__getitem__ = MagicMock(side_effect=get_stream_class)
+
         client = MagicMock()
+        client.config = {'appId': 'test_app_id', 'start_date': '2024-01-01T00:00:00Z'}
         config = {}
 
         sync(client, config, mock_catalog, state)
 
-        self.assertEqual(mock_sync.call_count, 1)
+        # When only child streams are selected, parent is synced once
+        self.assertEqual(mock_parent_instance.sync.call_count, 1)
+        # Child streams are not synced directly (parent syncs them)
+        self.assertEqual(mock_child_instance.sync.call_count, 0)
 
     @patch("singer.get_currently_syncing")
     @patch("singer.set_currently_syncing")

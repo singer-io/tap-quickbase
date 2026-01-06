@@ -1,3 +1,5 @@
+"""Catalog discovery for the Quickbase tap."""
+
 import singer
 from singer import metadata
 from singer.catalog import Catalog, CatalogEntry, Schema
@@ -19,8 +21,8 @@ def discover() -> Catalog:
             mdata = field_metadata[stream_name]
         except Exception as err:
             LOGGER.error(err)
-            LOGGER.error("stream_name: {}".format(stream_name))
-            LOGGER.error("type schema_dict: {}".format(type(schema_dict)))
+            LOGGER.error("stream_name: %s", stream_name)
+            LOGGER.error("type schema_dict: %s", type(schema_dict))
             raise err
 
         key_properties = metadata.to_map(mdata).get((), {}).get("table-key-properties")
@@ -36,4 +38,3 @@ def discover() -> Catalog:
         )
 
     return catalog
-

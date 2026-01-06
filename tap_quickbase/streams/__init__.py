@@ -1,3 +1,5 @@
+"""Stream registry for tap discovery and sync."""
+
 from tap_quickbase.streams.apps import Apps
 from tap_quickbase.streams.events import Events
 from tap_quickbase.streams.roles import Roles
@@ -25,4 +27,3 @@ STREAMS = {
     "fields_usage": FieldsUsage,
     "get_field_usage": GetFieldUsage,
 }
-

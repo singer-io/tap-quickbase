@@ -1,7 +1,9 @@
+"""JSON schema and metadata generation for tap discovery."""
+
 import os
 import json
-import singer
 from typing import Dict, Tuple
+import singer
 from singer import metadata
 from tap_quickbase.streams import STREAMS
 
@@ -31,7 +33,9 @@ def load_schema_references() -> Dict:
 
     refs = {}
     for shared_schema_file in shared_file_names:
-        with open(os.path.join(shared_schema_path, shared_schema_file)) as data_file:
+        with open(
+            os.path.join(shared_schema_path, shared_schema_file), encoding="utf-8"
+        ) as data_file:
             refs["shared/" + shared_schema_file] = json.load(data_file)
 
     return refs
@@ -39,15 +43,16 @@ def load_schema_references() -> Dict:
 
 def get_schemas() -> Tuple[Dict, Dict]:
     """
-    Load the schema references, prepare metadata for each streams and return schema and metadata for the catalog.
+    Load the schema references, prepare metadata for each stream, and return schema
+    and metadata for the catalog.
     """
     schemas = {}
     field_metadata = {}
 
     refs = load_schema_references()
     for stream_name, stream_obj in STREAMS.items():
-        schema_path = get_abs_path("schemas/{}.json".format(stream_name))
-        with open(schema_path) as file:
+        schema_path = get_abs_path(f"schemas/{stream_name}.json")
+        with open(schema_path, encoding="utf-8") as file:
             schema = json.load(file)
 
         schemas[stream_name] = schema
@@ -68,13 +73,14 @@ def get_schemas() -> Tuple[Dict, Dict]:
                 mdata = metadata.write(
                     mdata, ("properties", field_name), "inclusion", "automatic"
                 )
-        
+
         parent_tap_stream_id = getattr(stream_obj, "parent", None)
         if parent_tap_stream_id:
-            mdata = metadata.write(mdata, (), 'parent-tap-stream-id', parent_tap_stream_id)
+            mdata = metadata.write(
+                mdata, (), "parent-tap-stream-id", parent_tap_stream_id
+            )
 
         mdata = metadata.to_list(mdata)
         field_metadata[stream_name] = mdata
 
     return schemas, field_metadata
-
