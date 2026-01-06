@@ -15,6 +15,7 @@ class QuickbaseAllFields(AllFieldsTest, QuickbaseBaseTest):
         return "tap_tester_quickbase_all_fields_test"
 
     def streams_to_test(self):
-        streams_to_exclude = {}
+        # Exclude streams with no test data available in the test account
+        streams_to_exclude = set()
         return self.expected_stream_names().difference(streams_to_exclude)
 
