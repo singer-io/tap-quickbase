@@ -16,6 +16,6 @@ class Apps(IncrementalStream):
         """Get app by ID from config"""
         app_id = self.client.config.get('app_id')
         if not app_id:
-            raise ValueError("appId is required in config to sync apps")
+            raise ValueError("app_id is required in config to sync apps")
         path = self.path.replace('{appId}', app_id)
         return f"{self.client.base_url}/{path}"

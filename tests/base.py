@@ -135,7 +135,7 @@ class QuickbaseBaseTest(BaseCase):
         creds = {
             'access_token': 'TAP_QUICKBASE_ACCESS_TOKEN',
             'realm_hostname': 'TAP_QUICKBASE_REALM_HOSTNAME',
-            'appId': 'TAP_QUICKBASE_APP_ID'
+            'app_id': 'TAP_QUICKBASE_APP_ID'
         }
 
         for cred in creds:

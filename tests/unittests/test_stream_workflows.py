@@ -130,7 +130,7 @@ class TestURLEndpointGeneration(unittest.TestCase):
         """Common setup."""
         self.client = MagicMock()
         self.client.base_url = "https://api.quickbase.com"
-        self.client.config = {"appId": "app123"}
+        self.client.config = {"app_id": "app123"}
         
         self.catalog = MagicMock()
         self.catalog.schema.to_dict.return_value = {}
