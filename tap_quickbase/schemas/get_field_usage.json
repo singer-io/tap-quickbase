@@ -1,6 +1,12 @@
 {
     "type": "object",
     "properties": {
+        "id": {
+            "type": [
+                "null",
+                "integer"
+            ]
+        },
         "actions": {
             "type": "object",
             "properties": {
