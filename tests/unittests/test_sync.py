@@ -1,61 +1,58 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from tap_quickbase.sync import write_schema, sync, update_currently_syncing
+from tap_quickbase.sync import setup_children, sync, update_currently_syncing
 
 class TestSync(unittest.TestCase):
 
     @patch('tap_quickbase.sync.STREAMS')
-    def test_write_schema_only_parent_selected(self, mock_streams):
+    def test_setup_children_only_parent_selected(self, mock_streams):
         mock_stream = MagicMock()
-        mock_stream.is_selected.return_value = True
         mock_stream.children = ["events", "roles"]
         mock_stream.child_to_sync = []
 
         client = MagicMock()
         catalog = MagicMock()
         mock_child = MagicMock()
+        mock_child.children = []
         catalog.get_stream.return_value = MagicMock()
         mock_streams.__getitem__.return_value = lambda c, cat: mock_child
 
-        write_schema(mock_stream, client, [], catalog)
+        setup_children(mock_stream, client, [], catalog)
 
-        mock_stream.write_schema.assert_called_once()
         self.assertEqual(len(mock_stream.child_to_sync), 0)
 
     @patch('tap_quickbase.sync.STREAMS')
-    def test_write_schema_parent_child_both_selected(self, mock_streams):
+    def test_setup_children_parent_child_both_selected(self, mock_streams):
         mock_stream = MagicMock()
-        mock_stream.is_selected.return_value = True
         mock_stream.children = ["events", "roles"]
         mock_stream.child_to_sync = []
 
         client = MagicMock()
         catalog = MagicMock()
         mock_child = MagicMock()
+        mock_child.children = []
         catalog.get_stream.return_value = MagicMock()
         mock_streams.__getitem__.return_value = lambda c, cat: mock_child
 
-        write_schema(mock_stream, client, ["events"], catalog)
+        setup_children(mock_stream, client, ["events"], catalog)
 
-        mock_stream.write_schema.assert_called_once()
         self.assertEqual(len(mock_stream.child_to_sync), 1)
 
     @patch('tap_quickbase.sync.STREAMS')
-    def test_write_schema_child_selected(self, mock_streams):
+    def test_setup_children_child_selected(self, mock_streams):
         mock_stream = MagicMock()
-        mock_stream.is_selected.return_value = False
         mock_stream.children = ["events", "roles"]
         mock_stream.child_to_sync = []
 
         client = MagicMock()
         catalog = MagicMock()
         mock_child = MagicMock()
+        mock_child.children = []
         catalog.get_stream.return_value = MagicMock()
         mock_streams.__getitem__.return_value = lambda c, cat: mock_child
 
-        write_schema(mock_stream, client, ["events", "roles"], catalog)
+        setup_children(mock_stream, client, ["events", "roles"], catalog)
 
-        self.assertEqual(mock_stream.write_schema.call_count, 0)
         self.assertEqual(len(mock_stream.child_to_sync), 2)
 
     @patch('tap_quickbase.sync.STREAMS')

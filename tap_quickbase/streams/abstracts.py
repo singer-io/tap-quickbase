@@ -173,6 +173,16 @@ class BaseStream(ABC):
         """
         return record
 
+    def sync_child_streams(self, state: Dict, transformer: Transformer, record: Dict) -> None:
+        """Write schema and sync child streams."""
+        from singer import set_currently_syncing, write_state
+        for child in self.child_to_sync:
+            if child.is_selected():
+                child.write_schema()
+            set_currently_syncing(state, child.tap_stream_id)
+            write_state(state)
+            child.sync(state=state, transformer=transformer, parent_obj=record)
+
     def get_url_endpoint(self, parent_obj: Dict = None) -> str:
         """
         Get the URL endpoint for the stream, handling path parameters.
@@ -182,7 +192,7 @@ class BaseStream(ABC):
 
         formatted_path = self.path
         replacements = {
-            '{appId}': str(self.client.config.get('appId', parent_obj.get('id', ''))),
+            '{appId}': str(self.client.config.get('app_id', parent_obj.get('id', ''))),
             '{tableId}': self._get_table_id(parent_obj),
             '{fieldId}': str(parent_obj.get('id', '')),
             '{reportId}': str(parent_obj.get('id', ''))
@@ -264,8 +274,7 @@ class IncrementalStream(BaseStream):
                         current_max_bookmark_date, record_bookmark
                     )
 
-                    for child in self.child_to_sync:
-                        child.sync(state=state, transformer=transformer, parent_obj=record)
+                    self.sync_child_streams(state, transformer, record)
 
             state = self.write_bookmark(
                 state, self.tap_stream_id, value=current_max_bookmark_date
@@ -296,8 +305,7 @@ class FullTableStream(BaseStream):
                     write_record(self.tap_stream_id, transformed_record)
                     counter.increment()
 
-                for child in self.child_to_sync:
-                    child.sync(state=state, transformer=transformer, parent_obj=record)
+                self.sync_child_streams(state, transformer, record)
 
             return counter.value
 

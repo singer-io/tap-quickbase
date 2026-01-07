@@ -36,7 +36,7 @@ class QuickbaseBaseTest(BaseCase):
         return {
             "apps": {
                 cls.PRIMARY_KEYS: { "id" },
-                cls.REPLICATION_METHOD: cls.INCREMENTAL,
+                cls.REPLICATION_METHOD: cls.FULL_TABLE,
                 cls.REPLICATION_KEYS: set(),
                 cls.OBEYS_START_DATE: False,
                 cls.API_LIMIT: 100
@@ -59,7 +59,7 @@ class QuickbaseBaseTest(BaseCase):
             },
             "app_tables": {
                 cls.PRIMARY_KEYS: { "id" },
-                cls.REPLICATION_METHOD: cls.INCREMENTAL,
+                cls.REPLICATION_METHOD: cls.FULL_TABLE,
                 cls.REPLICATION_KEYS: set(),
                 cls.OBEYS_START_DATE: False,
                 cls.PARENT_TAP_STREAM_ID: "apps",
@@ -67,7 +67,7 @@ class QuickbaseBaseTest(BaseCase):
             },
             "tables": {
                 cls.PRIMARY_KEYS: { "id" },
-                cls.REPLICATION_METHOD: cls.INCREMENTAL,
+                cls.REPLICATION_METHOD: cls.FULL_TABLE,
                 cls.REPLICATION_KEYS: set(),
                 cls.OBEYS_START_DATE: False,
                 cls.PARENT_TAP_STREAM_ID: "app_tables",

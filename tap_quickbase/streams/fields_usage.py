@@ -12,13 +12,9 @@ class FieldsUsage(FullTableStream):
     parent = "app_tables"
 
     def modify_object(self, record, parent_record=None):
-        """Flatten the API response structure - merge field and usage objects."""
+        """Flatten field and usage objects with field.id as primary key."""
         if not record:
             return record
-
-        # Extract field info and usage stats
         field = record.get('field', {})
         usage = record.get('usage', {})
-
-        # Merge them with field.id as the primary key
         return {'id': field.get('id'), **usage}

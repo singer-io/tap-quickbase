@@ -11,7 +11,7 @@ from singer import Transformer
 class MockIncrementalStream(IncrementalStream):
     """Mock incremental stream for testing."""
     tap_stream_id = "test_incremental"
-    replication_method = "INCREMENTAL"
+    replication_method = "FULL_TABLE"
     replication_keys = ["updated"]
     key_properties = ["id"]
     path = "v1/test"
@@ -130,7 +130,7 @@ class TestURLEndpointGeneration(unittest.TestCase):
         """Common setup."""
         self.client = MagicMock()
         self.client.base_url = "https://api.quickbase.com"
-        self.client.config = {"appId": "app123"}
+        self.client.config = {"app_id": "app123"}
         
         self.catalog = MagicMock()
         self.catalog.schema.to_dict.return_value = {}

@@ -20,18 +20,16 @@ def update_currently_syncing(state: Dict, stream_name: str) -> None:
     singer.write_state(state)
 
 
-def write_schema(stream, client, streams_to_sync, catalog) -> None:
+def setup_children(stream, client, streams_to_sync, catalog) -> None:
     """
-    Write schema for stream and its children
+    Setup children for stream if they're selected to sync (recursively)
     """
-    if stream.is_selected():
-        stream.write_schema()
-
     for child in stream.children:
-        child_obj = STREAMS[child](client, catalog.get_stream(child))
-        write_schema(child_obj, client, streams_to_sync, catalog)
         if child in streams_to_sync:
+            child_obj = STREAMS[child](client, catalog.get_stream(child))
             stream.child_to_sync.append(child_obj)
+            # Recursively setup grandchildren
+            setup_children(child_obj, client, streams_to_sync, catalog)
 
 
 def sync(client: Client, config: Dict, catalog: singer.Catalog, state) -> None:  # pylint: disable=unused-argument
@@ -59,7 +57,13 @@ def sync(client: Client, config: Dict, catalog: singer.Catalog, state) -> None: 
                     streams_to_sync.append(stream.parent)
                 continue
 
-            write_schema(stream, client, streams_to_sync, catalog)
+            # Setup children relationships
+            setup_children(stream, client, streams_to_sync, catalog)
+
+            # Write schema for the stream if selected
+            if stream.is_selected():
+                stream.write_schema()
+
             LOGGER.info("START Syncing: %s", stream_name)
             update_currently_syncing(state, stream_name)
             total_records = stream.sync(state=state, transformer=transformer)
