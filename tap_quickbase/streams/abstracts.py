@@ -11,7 +11,9 @@ from singer import (
     write_bookmark,
     write_record,
     write_schema,
-    metadata
+    metadata,
+    set_currently_syncing,
+    write_state
 )
 
 LOGGER = get_logger()
@@ -173,9 +175,17 @@ class BaseStream(ABC):
         """
         return record
 
+    @staticmethod
+    def flatten_field_usage_record(record: Dict) -> Dict:
+        """Helper to flatten field and usage objects with field.id as primary key."""
+        if not record:
+            return record
+        field = record.get('field', {})
+        usage = record.get('usage', {})
+        return {'id': field.get('id'), **usage}
+
     def sync_child_streams(self, state: Dict, transformer: Transformer, record: Dict) -> None:
         """Write schema and sync child streams."""
-        from singer import set_currently_syncing, write_state
         for child in self.child_to_sync:
             if child.is_selected():
                 child.write_schema()
