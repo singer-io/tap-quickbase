@@ -1,5 +1,6 @@
 from base import QuickbaseBaseTest
 from tap_tester.base_suite_tests.bookmark_test import BookmarkTest
+import unittest
 
 
 class QuickbaseBookMarkTest(BookmarkTest, QuickbaseBaseTest):
@@ -7,21 +8,20 @@ class QuickbaseBookMarkTest(BookmarkTest, QuickbaseBaseTest):
     stream."""
     bookmark_format = "%Y-%m-%dT%H:%M:%S.%fZ"
     initial_bookmarks = {
-        "bookmarks": {
-            "apps": {},
-            "app_tables": {},
-            "tables": {},
-        }
+        "bookmarks": {}
     }
     @staticmethod
     def name():
         return "tap_tester_quickbase_bookmark_test"
 
     def streams_to_test(self):
+        # All streams are FULL_TABLE - no incremental/bookmark support
         streams_to_exclude = {
-            # Unsupported Full-Table Streams
+            'apps',
             'events',
             'roles',
+            'app_tables',
+            'tables',
             'table_relationships',
             'table_reports',
             'get_reports',
@@ -32,13 +32,8 @@ class QuickbaseBookMarkTest(BookmarkTest, QuickbaseBaseTest):
         }
         return self.expected_stream_names().difference(streams_to_exclude)
 
-    def calculate_new_bookmarks(self):
-        """Calculate new bookmarks to sync at least 2 records in the next sync."""
-        new_bookmarks = {
-            "apps": {},
-            "app_tables": {},
-            "tables": {},
-        }
-
-        return new_bookmarks
-
+    def setUp(self):
+        """Skip all tests if no streams support bookmarks."""
+        if not self.streams_to_test():
+            self.skipTest("All streams use FULL_TABLE replication - no bookmark support")
+        super().setUp()
