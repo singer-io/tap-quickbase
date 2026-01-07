@@ -11,6 +11,5 @@ class QuickbaseDiscoveryTest(DiscoveryTest, QuickbaseBaseTest):
         return "tap_tester_quickbase_discovery_test"
 
     def streams_to_test(self):
-        # Exclude get_field_usage - it has a key property that doesn't exist in schema
-        return self.expected_stream_names().difference({'get_field_usage'})
+        return self.expected_stream_names()
 
