@@ -1,16 +1,15 @@
 from base import QuickbaseBaseTest
 from tap_tester.base_suite_tests.all_fields_test import AllFieldsTest
 
-KNOWN_MISSING_FIELDS = {
-    'apps': {'ancestorId', 'dataClassification'},
-    'fields': {'permissions'},
-}
-
-
 
 class QuickbaseAllFields(AllFieldsTest, QuickbaseBaseTest):
     """Ensure running the tap with all streams and fields selected results in
     the replication of all fields."""
+
+    MISSING_FIELDS = {
+        'apps': {'ancestorId', 'dataClassification'},
+        'fields': {'permissions'},
+    }
 
     @staticmethod
     def name():

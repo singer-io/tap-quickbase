@@ -17,7 +17,7 @@ class QuickbaseBaseTest(BaseCase):
     Metadata describing streams. A bunch of shared methods that are used
     in tap-tester tests. Shared tap-specific methods (as needed).
     """
-    start_date = "2019-01-01T00:00:00Z"
+    start_date = "2025-12-01T00:00:00Z"
     PARENT_TAP_STREAM_ID = "parent-tap-stream-id"
 
     @staticmethod
