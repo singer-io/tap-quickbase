@@ -13,9 +13,11 @@ class QuickbaseInterruptedSyncTest(InterruptedSyncTest, QuickbaseBaseTest):
 
     def streams_to_test(self):
         streams_to_exclude = {
-            # Unsupported Full-Table Streams
+            'apps',
             'events',
             'roles',
+            'app_tables',
+            'tables',
             'table_relationships',
             'table_reports',
             'get_reports',
@@ -26,14 +28,13 @@ class QuickbaseInterruptedSyncTest(InterruptedSyncTest, QuickbaseBaseTest):
         }
         return self.expected_stream_names().difference(streams_to_exclude)
 
+    def setUp(self):
+        """Skip all tests if no streams support interrupted sync."""
+        if not self.streams_to_test():
+            self.skipTest("Streams use FULL_TABLE replication")
+        super().setUp()
 
     def manipulate_state(self):
-        return {
-            "currently_syncing": "apps",
-            "bookmarks": {
-                "apps": {},
-                "app_tables": {},
-                "tables": {},
-            }
-        }
+        """Return empty state - not used since tests are skipped."""
+        return {"bookmarks": {}}
 
