@@ -10,3 +10,9 @@ class Events(FullTableStream):
     replication_keys = []
     path = "v1/apps/{appId}/events"
     parent = "apps"
+
+    def modify_object(self, record, parent_record=None):
+        """Extract owner.id as top-level id."""
+        if record and 'owner' in record and 'id' in record['owner']:
+            record['id'] = record['owner']['id']
+        return record

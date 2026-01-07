@@ -11,7 +11,7 @@ from singer import Transformer
 class MockIncrementalStream(IncrementalStream):
     """Mock incremental stream for testing."""
     tap_stream_id = "test_incremental"
-    replication_method = "INCREMENTAL"
+    replication_method = "FULL_TABLE"
     replication_keys = ["updated"]
     key_properties = ["id"]
     path = "v1/test"
