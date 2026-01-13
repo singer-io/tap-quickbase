@@ -32,7 +32,7 @@ def raise_for_error(response: requests.Response) -> None:
     """
     try:
         response_json = response.json()
-    except Exception:  # pylint: disable=broad-exception-caught
+    except json.JSONDecodeError:
         response_json = {}
     if response.status_code not in [200, 201, 204]:
         if response_json.get("error"):
