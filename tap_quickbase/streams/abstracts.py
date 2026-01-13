@@ -17,6 +17,7 @@ from singer import (
 )
 
 LOGGER = get_logger()
+DEFAULT_PAGE_SIZE = 100
 
 
 class BaseStream(ABC):
@@ -32,7 +33,7 @@ class BaseStream(ABC):
 
     url_endpoint = ""
     path = ""
-    page_size = 100
+    page_size = 0
     headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
     children = []
     parent = ""
@@ -103,9 +104,11 @@ class BaseStream(ABC):
 
     def get_records(self) -> Iterator:
         """Interacts with api client interaction and pagination."""
+        self.params["page_size"] = self.client.config.get("page_size", DEFAULT_PAGE_SIZE)
         skip = 0
+        has_more_pages = True
 
-        while True:
+        while has_more_pages:
             # Add pagination params if this is a paginated endpoint
             if self.page_size is not None:
                 target = self.data_payload if self.http_method == "POST" else self.params
