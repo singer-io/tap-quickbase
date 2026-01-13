@@ -1,13 +1,14 @@
 """Tables stream definition."""
 
-from tap_quickbase.streams.abstracts import FullTableStream
+from tap_quickbase.streams.abstracts import ChildBaseStream
 
-class Tables(FullTableStream):
+
+class Tables(ChildBaseStream):
     """Tables stream."""
     tap_stream_id = "tables"
     key_properties = ["id"]
-    replication_method = "FULL_TABLE"
-    replication_keys = []
+    replication_method = "INCREMENTAL"
+    replication_keys = ["updated"]
     path = "v1/tables/{tableId}?appId={appId}"
     parent = "app_tables"
     page_size = None  # Single resource endpoint

@@ -2,6 +2,7 @@
 
 from tap_quickbase.streams.abstracts import FullTableStream
 
+
 class TableRelationships(FullTableStream):
     """TableRelationships stream."""
     tap_stream_id = "table_relationships"
