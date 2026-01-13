@@ -10,4 +10,3 @@ class Tables(FullTableStream):
     replication_keys = []
     path = "v1/tables/{tableId}?appId={appId}"
     parent = "app_tables"
-    page_size = None  # Single resource endpoint

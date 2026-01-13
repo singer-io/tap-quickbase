@@ -10,7 +10,6 @@ class Apps(FullTableStream):
     replication_keys = []
     path = "v1/apps/{appId}"
     children = ["events", "roles", "app_tables"]
-    page_size = None  # Single app endpoint, no pagination needed
 
     def get_url_endpoint(self, parent_obj=None):
         """Get app by ID from config"""

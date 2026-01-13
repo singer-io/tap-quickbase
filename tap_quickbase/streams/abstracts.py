@@ -33,7 +33,6 @@ class BaseStream(ABC):
 
     url_endpoint = ""
     path = ""
-    page_size = 0
     headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
     children = []
     parent = ""
@@ -104,15 +103,13 @@ class BaseStream(ABC):
 
     def get_records(self) -> Iterator:
         """Interacts with api client interaction and pagination."""
-        self.params["page_size"] = self.client.config.get("page_size", DEFAULT_PAGE_SIZE)
+        page_size = self.client.config.get("page_size", DEFAULT_PAGE_SIZE)
         skip = 0
         has_more_pages = True
+        max_iterations = 10000  # Safety limit to prevent infinite loops
 
-        while has_more_pages:
-            # Add pagination params if this is a paginated endpoint
-            if self.page_size is not None:
-                target = self.data_payload if self.http_method == "POST" else self.params
-                target.update({"skip": skip, "top": self.page_size})
+        while has_more_pages and max_iterations > 0:
+            max_iterations -= 1
 
             response = self.client.make_request(
                 self.http_method,
@@ -125,22 +122,30 @@ class BaseStream(ABC):
 
             # Extract records from response
             raw_records = self._extract_records(response)
+            num_records = len(raw_records)
+
             yield from raw_records
 
-            # Stop pagination for single resource endpoints
-            if self.page_size is None:
-                break
-
-            # Check if more records exist
-            num_records = len(raw_records)
-            skip += num_records
+            # Stop if no records returned or fewer records than expected page size
+            # Most Quickbase endpoints return all records in single response
+            if num_records == 0 or num_records < page_size:
+                has_more_pages = False
+                continue
 
             if isinstance(response, dict) and "metadata" in response:
                 total_records = response["metadata"].get("totalRecords", 0)
-                if skip >= total_records or num_records == 0:
-                    break
-            elif num_records < self.page_size:
-                break
+                skip += num_records
+                if skip >= total_records:
+                    has_more_pages = False
+            else:
+                has_more_pages = False
+
+        if max_iterations == 0:
+            LOGGER.warning(
+                "Maximum iteration limit reached for stream %s. "
+                "This indicates an infinite loop.",
+                self.tap_stream_id
+            )
 
     def _extract_records(self, response) -> List:
         """Extract records from API response."""
