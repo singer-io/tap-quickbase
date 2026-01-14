@@ -41,7 +41,7 @@ This tap:
 
 **[apps](https://developer.quickbase.com/operation/getApp)**
 - Primary keys: ['id']
-- Replication strategy: INCREMENTAL
+- Replication strategy: FULL_TABLE
 
 **[events](https://developer.quickbase.com/operation/getAppEvents)**
 - Primary keys: ['id']
@@ -53,11 +53,11 @@ This tap:
 
 **[app_tables](https://developer.quickbase.com/operation/getAppTables)**
 - Primary keys: ['id']
-- Replication strategy: INCREMENTAL
+- Replication strategy: FULL_TABLE
 
 **[tables](https://developer.quickbase.com/operation/getTable)**
 - Primary keys: ['id']
-- Replication strategy: INCREMENTAL
+- Replication strategy: FULL_TABLE
 
 **[table_relationships](https://developer.quickbase.com/operation/getRelationships)**
 - Primary keys: ['id', 'tableId']
