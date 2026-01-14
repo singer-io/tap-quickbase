@@ -11,4 +11,3 @@ class GetFields(FullTableStream):
     replication_keys = []
     path = "v1/fields/{fieldId}?tableId={tableId}"
     parent = "fields"
-    page_size = None  # Single resource endpoint

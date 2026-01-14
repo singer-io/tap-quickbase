@@ -11,7 +11,6 @@ class GetFieldUsage(FullTableStream):
     replication_keys = []
     path = "v1/fields/usage/{fieldId}?tableId={tableId}"
     parent = "fields_usage"
-    page_size = None  # Single resource endpoint
 
     def modify_object(self, record, parent_record=None):
         """Flatten field and usage objects with field.id as primary key."""

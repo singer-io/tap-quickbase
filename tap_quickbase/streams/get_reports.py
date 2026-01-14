@@ -11,4 +11,3 @@ class GetReports(FullTableStream):
     replication_keys = []
     path = "v1/reports/{reportId}?tableId={tableId}"
     parent = "table_reports"
-    page_size = None  # Single resource endpoint
