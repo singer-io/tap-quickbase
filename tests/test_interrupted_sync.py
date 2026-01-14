@@ -1,4 +1,3 @@
-
 from base import QuickbaseBaseTest
 from tap_tester.base_suite_tests.interrupted_sync_test import InterruptedSyncTest
 
@@ -28,7 +27,6 @@ class QuickbaseInterruptedSyncTest(InterruptedSyncTest, QuickbaseBaseTest):
     def manipulate_state(self):
         """Return empty state - not used since tests are skipped."""
         return {
-            "currently_syncing": "apps",
-            "bookmarks": {
+            "currently_syncing": "app_tables",
+            "bookmarks": {}
         }
-    }

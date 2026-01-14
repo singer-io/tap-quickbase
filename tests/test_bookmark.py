@@ -4,12 +4,18 @@ import unittest
 
 
 class QuickbaseBookMarkTest(BookmarkTest, QuickbaseBaseTest):
-    """Test tap sets a bookmark and respects it for the next sync of a
-    stream."""
+    """Test tap sets a bookmark and respects it for the next sync of a stream.
+
+    The test account has insufficient data for bookmark testing.
+    - apps: 1 record with single timestamp
+    - app_tables: 6 records with same timestamp
+    - tables: 6 records with same timestamp
+    """
     bookmark_format = "%Y-%m-%dT%H:%M:%S.%fZ"
     initial_bookmarks = {
         "bookmarks": {}
     }
+
     @staticmethod
     def name():
         return "tap_tester_quickbase_bookmark_test"
