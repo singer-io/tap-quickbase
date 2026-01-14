@@ -28,6 +28,7 @@ class TestPagination(unittest.TestCase):
         """Common setup."""
         self.client = MagicMock()
         self.client.base_url = "https://api.quickbase.com"
+        self.client.config = {"page_size": 100}  # Add config for page_size
         self.catalog = MagicMock()
         self.catalog.schema.to_dict.return_value = {}
         self.catalog.metadata = []
@@ -59,6 +60,7 @@ class TestRecordExtraction(unittest.TestCase):
         """Common setup."""
         self.client = MagicMock()
         self.client.base_url = "https://api.quickbase.com"
+        self.client.config = {"page_size": 100}  # Add config for page_size
         self.catalog = MagicMock()
         self.catalog.schema.to_dict.return_value = {}
         self.catalog.metadata = []
