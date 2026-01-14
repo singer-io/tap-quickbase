@@ -1,7 +1,10 @@
 from base import QuickbaseBaseTest
 from tap_tester.base_suite_tests.start_date_test import StartDateTest
+import unittest
 
 
+@unittest.skip("All streams in tap-quickbase are FULL_TABLE replication and don't obey start_date. "
+               "Start date tests only apply to streams with OBEYS_START_DATE=True.")
 class QuickbaseStartDateTest(StartDateTest, QuickbaseBaseTest):
     """Test start date handling for tap-quickbase.
 
@@ -9,7 +12,7 @@ class QuickbaseStartDateTest(StartDateTest, QuickbaseBaseTest):
     Some streams (apps, app_tables, tables) are pseudo-incremental where
     filtering is done at the tap side using state, but they remain FULL_TABLE
     replication method. Since there are no streams that truly obey start_date,
-    this test class will skip all start_date tests.
+    this test class is skipped.
     """
 
     @staticmethod
@@ -18,8 +21,7 @@ class QuickbaseStartDateTest(StartDateTest, QuickbaseBaseTest):
 
     def streams_to_test(self):
         # All streams are FULL_TABLE and don't obey start_date
-        # Return empty set to skip all start_date tests
-        return set()
+        return self.expected_stream_names()
 
     @property
     def start_date_1(self):

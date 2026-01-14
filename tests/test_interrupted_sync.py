@@ -1,7 +1,10 @@
 from base import QuickbaseBaseTest
 from tap_tester.base_suite_tests.interrupted_sync_test import InterruptedSyncTest
+import unittest
 
 
+@unittest.skip("All streams in tap-quickbase are FULL_TABLE replication. "
+               "Interrupted sync tests only apply to INCREMENTAL streams.")
 class QuickbaseInterruptedSyncTest(InterruptedSyncTest, QuickbaseBaseTest):
     """Test tap resumes from interrupted sync.
 
@@ -9,7 +12,7 @@ class QuickbaseInterruptedSyncTest(InterruptedSyncTest, QuickbaseBaseTest):
     Some streams (apps, app_tables, tables) are pseudo-incremental where
     filtering is done at the tap side using state, but they remain FULL_TABLE
     replication method. Since all streams are FULL_TABLE, interrupted sync
-    behavior is not applicable and tests will be skipped.
+    behavior is not applicable and this test class is skipped.
     """
 
     @staticmethod
@@ -18,8 +21,7 @@ class QuickbaseInterruptedSyncTest(InterruptedSyncTest, QuickbaseBaseTest):
 
     def streams_to_test(self):
         # All streams are FULL_TABLE - interrupted sync doesn't apply
-        # Return empty set to skip all interrupted sync tests
-        return set()
+        return self.expected_stream_names()
 
     def manipulate_state(self):
         """Return state with currently_syncing set to first stream."""
