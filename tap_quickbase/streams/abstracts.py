@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 import json
+from datetime import datetime, timedelta
 from typing import Any, Dict, Tuple, List, Iterator
 from singer import (
     Transformer,
@@ -15,6 +16,7 @@ from singer import (
     set_currently_syncing,
     write_state
 )
+import singer.utils as singer_utils
 
 LOGGER = get_logger()
 DEFAULT_PAGE_SIZE = 100
@@ -325,6 +327,155 @@ class FullTableStream(BaseStream):
 
                 self.sync_child_streams(state, transformer, record)
 
+            return counter.value
+
+
+class PseudoIncrementalStream(BaseStream):
+    """
+    Base Class for Pseudo-Incremental Stream.
+    
+    This class implements incremental behavior using tap-side filtering only.
+    The API is still called as FULL_TABLE, but we filter records based on
+    the 'updated' field and maintain bookmarks.
+    
+    This approach is used when:
+    - The API does NOT support server-side filtering by updated timestamp
+    - We want to reduce duplicate data in targets
+    - We still need to comply with Singer spec (no replication_key declaration)
+    """
+
+    replication_keys = []
+    bookmark_field = "updated"  # Field to use for bookmarking
+
+    def _parse_datetime(self, dt_str: str) -> datetime:
+        """Parse datetime string to datetime object."""
+        if not dt_str:
+            return None
+        try:
+            return singer_utils.strptime_to_utc(dt_str)
+        except Exception as e:
+            LOGGER.warning(f"Failed to parse datetime '{dt_str}': {e}")
+            return None
+
+    def _get_bookmark(self, state: Dict) -> datetime:
+        """
+        Get the last bookmark for this stream.
+        Subtracts 1 second to ensure we don't miss records with the same timestamp.
+        """
+        bookmark_str = get_bookmark(state, self.tap_stream_id, self.bookmark_field)
+        
+        if not bookmark_str:
+            # No bookmark, use start_date from config or epoch
+            start_date = self.client.config.get("start_date", "1970-01-01T00:00:00Z")
+            bookmark_dt = self._parse_datetime(start_date)
+        else:
+            bookmark_dt = self._parse_datetime(bookmark_str)
+        
+        # Subtract 1 second to avoid missing records with exact same timestamp
+        if bookmark_dt:
+            bookmark_dt = bookmark_dt - timedelta(seconds=1)
+        
+        return bookmark_dt
+
+    def _write_bookmark(self, state: Dict, value: str) -> Dict:
+        """Write bookmark for this stream."""
+        if not value:
+            return state
+        
+        current_bookmark = get_bookmark(state, self.tap_stream_id, self.bookmark_field)
+        
+        # Only update if new value is greater
+        if current_bookmark:
+            current_dt = self._parse_datetime(current_bookmark)
+            new_dt = self._parse_datetime(value)
+            if new_dt and current_dt and new_dt <= current_dt:
+                return state
+        
+        state = write_bookmark(state, self.tap_stream_id, self.bookmark_field, value)
+        write_state(state)
+        return state
+
+    def sync(
+        self,
+        state: Dict,
+        transformer: Transformer,
+        parent_obj: Dict = None,
+    ) -> Dict:
+        """
+        Sync implementation with tap-side filtering.
+        
+        This method:
+        1. Fetches ALL records from API (FULL_TABLE)
+        2. Filters records where updated > last_bookmark (tap-side)
+        3. Emits only filtered records
+        4. Tracks max updated value seen
+        5. Writes bookmark at end
+        """
+        self.url_endpoint = self.get_url_endpoint(parent_obj)
+        
+        # Get last bookmark
+        last_bookmark_dt = self._get_bookmark(state)
+        max_updated_str = None
+        max_updated_dt = last_bookmark_dt
+        
+        LOGGER.info(
+            f"Starting pseudo-incremental sync for {self.tap_stream_id}. "
+            f"Last bookmark: {last_bookmark_dt.isoformat() if last_bookmark_dt else 'None'}"
+        )
+        
+        with metrics.record_counter(self.tap_stream_id) as counter:
+            for record in self.get_records():
+                record = self.modify_object(record, parent_obj)
+                
+                # Get updated field from record
+                record_updated_str = record.get(self.bookmark_field)
+                if not record_updated_str:
+                    # No updated field, skip this record (or emit it?)
+                    # For safety, we'll skip records without updated field
+                    LOGGER.warning(
+                        f"Record in {self.tap_stream_id} missing '{self.bookmark_field}' field, skipping"
+                    )
+                    continue
+                
+                record_updated_dt = self._parse_datetime(record_updated_str)
+                if not record_updated_dt:
+                    continue
+                
+                # Filter: only process records updated after bookmark
+                if last_bookmark_dt and record_updated_dt <= last_bookmark_dt:
+                    continue
+                
+                # Transform and emit record
+                transformed_record = transformer.transform(
+                    record, self.schema, self.metadata
+                )
+                
+                if self.is_selected():
+                    write_record(self.tap_stream_id, transformed_record)
+                    counter.increment()
+                
+                # Track max updated
+                if not max_updated_dt or record_updated_dt > max_updated_dt:
+                    max_updated_dt = record_updated_dt
+                    max_updated_str = record_updated_str
+                
+                # Sync children
+                self.sync_child_streams(state, transformer, record)
+            
+            # Write bookmark if we found any records
+            if max_updated_str:
+                state = self._write_bookmark(state, max_updated_str)
+                LOGGER.info(
+                    f"Completed sync for {self.tap_stream_id}. "
+                    f"Records emitted: {counter.value}. "
+                    f"New bookmark: {max_updated_str}"
+                )
+            else:
+                LOGGER.info(
+                    f"Completed sync for {self.tap_stream_id}. "
+                    f"No new records found. Bookmark unchanged."
+                )
+            
             return counter.value
 
 
