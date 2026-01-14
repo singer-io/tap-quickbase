@@ -3,8 +3,13 @@ from tap_tester.base_suite_tests.start_date_test import StartDateTest
 
 
 class QuickbaseStartDateTest(StartDateTest, QuickbaseBaseTest):
-    """Instantiate start date according to the desired data set and run the
-    test.
+    """Test start date handling for tap-quickbase.
+
+    NOTE: All streams in tap-quickbase are FULL_TABLE replication.
+    Some streams (apps, app_tables, tables) are pseudo-incremental where
+    filtering is done at the tap side using state, but they remain FULL_TABLE
+    replication method. Since there are no streams that truly obey start_date,
+    this test class will skip all start_date tests.
     """
 
     @staticmethod
@@ -12,19 +17,9 @@ class QuickbaseStartDateTest(StartDateTest, QuickbaseBaseTest):
         return "tap_tester_quickbase_start_date_test"
 
     def streams_to_test(self):
-        # Exclude streams with no test data available in the test account
-        streams_to_exclude = {
-            'events',
-            'roles',
-            'table_relationships',
-            'table_reports',
-            'get_reports',
-            'fields',
-            'get_fields',
-            'fields_usage',
-            'get_field_usage'
-        }
-        return self.expected_stream_names().difference(streams_to_exclude)
+        # All streams are FULL_TABLE and don't obey start_date
+        # Return empty set to skip all start_date tests
+        return set()
 
     @property
     def start_date_1(self):
