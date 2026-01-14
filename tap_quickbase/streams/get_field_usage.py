@@ -2,6 +2,7 @@
 
 from tap_quickbase.streams.abstracts import FullTableStream
 
+
 class GetFieldUsage(FullTableStream):
     """GetFieldUsage stream."""
     tap_stream_id = "get_field_usage"

@@ -2,6 +2,7 @@
 
 from tap_quickbase.streams.abstracts import FullTableStream
 
+
 class Roles(FullTableStream):
     """Roles stream."""
     tap_stream_id = "roles"
