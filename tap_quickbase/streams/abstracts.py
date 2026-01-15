@@ -321,12 +321,22 @@ class BaseStream(ABC):
 
     def sync_child_streams(self, state: Dict, transformer: Transformer, record: Dict) -> None:
         """Write schema and sync child streams."""
+        from tap_quickbase.exceptions import QuickbaseForbiddenError
+        
         for child in self.child_to_sync:
             if child.is_selected():
                 child.write_schema()
             set_currently_syncing(state, child.tap_stream_id)
             write_state(state)
-            child.sync(state=state, transformer=transformer, parent_obj=record)
+            try:
+                child.sync(state=state, transformer=transformer, parent_obj=record)
+            except QuickbaseForbiddenError as err:
+                # Log warning and continue if child resource is forbidden
+                LOGGER.warning(
+                    f"Skipping {child.tap_stream_id} for parent record {record.get('id')}: "
+                    f"{err.message}"
+                )
+                continue
 
     def get_url_endpoint(self, parent_obj: Dict = None) -> str:
         """
@@ -351,8 +361,13 @@ class BaseStream(ABC):
 
     def _get_table_id(self, parent_obj: Dict) -> str:
         """Extract tableId from parent object, handling nested query structure."""
+        # First check for tableId directly on the record (fields, fields_usage)
+        if 'tableId' in parent_obj:
+            return str(parent_obj['tableId'])
+        # Then check for tableId in nested query structure (table_reports)
         if 'query' in parent_obj and 'tableId' in parent_obj.get('query', {}):
             return str(parent_obj['query']['tableId'])
+        # Fall back to id as last resort
         return str(parent_obj.get('id', ''))
 
 
