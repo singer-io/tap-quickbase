@@ -112,10 +112,14 @@ class BaseStream(ABC):
         while has_more_pages and max_iterations > 0:
             max_iterations -= 1
 
+            # Add pagination params for this request
+            pagination_params = self.params.copy()
+            pagination_params.update({"skip": skip, "top": page_size})
+
             response = self.client.make_request(
                 self.http_method,
                 self.url_endpoint,
-                self.params,
+                pagination_params,
                 self.headers,
                 body=json.dumps(self.data_payload) if self.data_payload else None,
                 path=self.path

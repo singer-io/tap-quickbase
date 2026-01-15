@@ -36,7 +36,8 @@ class TestPagination(unittest.TestCase):
         self.stream = MockStream(self.client, self.catalog)
 
     def test_pagination_params_set(self):
-        """Test that pagination parameters are set correctly."""
+        """Test that pagination parameters (skip, top) are set correctly in API request."""
+        self.stream.data_key = "data"
         response = {
             "data": [{"id": 1}],
             "metadata": {
@@ -49,8 +50,17 @@ class TestPagination(unittest.TestCase):
         self.client.make_request.side_effect = [response]
         list(self.stream.get_records())
         
-        # Verify make_request was called with pagination params
+        # Verify make_request was called
         self.assertTrue(self.client.make_request.called)
+        
+        # Verify pagination params were passed
+        call_args = self.client.make_request.call_args
+        params = call_args[0][2]  # Third positional argument is params
+        
+        self.assertIn("skip", params, "skip parameter missing from API request")
+        self.assertIn("top", params, "top parameter missing from API request")
+        self.assertEqual(params["skip"], 0, "Initial skip should be 0")
+        self.assertEqual(params["top"], 100, "top should equal page_size")
 
 
 class TestRecordExtraction(unittest.TestCase):
@@ -117,6 +127,72 @@ class TestRecordExtraction(unittest.TestCase):
         records = self.stream._extract_records(response)
         
         self.assertEqual(len(records), 0)
+
+
+class TestPaginationParams(unittest.TestCase):
+    """Test pagination parameters are correctly sent in requests."""
+
+    def setUp(self):
+        """Common setup."""
+        self.client = MagicMock()
+        self.client.base_url = "https://api.quickbase.com"
+        self.catalog = MagicMock()
+        self.catalog.schema.to_dict.return_value = {}
+        self.catalog.metadata = []
+
+    def test_pagination_params_updated_across_pages(self):
+        """Test that skip parameter increments correctly across multiple pages."""
+        self.client.config = {"page_size": 50}
+        stream = MockStream(self.client, self.catalog)
+        stream.data_key = "data"
+        
+        # Simulate 2 pages
+        self.client.make_request.side_effect = [
+            {"data": [{"id": i} for i in range(50)], "metadata": {"totalRecords": 100, "skip": 0}},
+            {"data": [{"id": i} for i in range(50, 100)], "metadata": {"totalRecords": 100, "skip": 50}},
+        ]
+        
+        list(stream.get_records())
+        
+        # Check first request: skip=0, top=50
+        first_call_params = self.client.make_request.call_args_list[0][0][2]
+        self.assertEqual(first_call_params["skip"], 0)
+        self.assertEqual(first_call_params["top"], 50)
+        
+        # Check second request: skip=50, top=50
+        second_call_params = self.client.make_request.call_args_list[1][0][2]
+        self.assertEqual(second_call_params["skip"], 50)
+        self.assertEqual(second_call_params["top"], 50)
+
+    def test_pagination_params_with_custom_page_size(self):
+        """Test that custom page_size is reflected in 'top' parameter."""
+        self.client.config = {"page_size": 25}
+        stream = MockStream(self.client, self.catalog)
+        stream.data_key = "data"
+        
+        self.client.make_request.side_effect = [
+            {"data": [{"id": i} for i in range(25)], "metadata": {"totalRecords": 25, "skip": 0}},
+        ]
+        
+        list(stream.get_records())
+        
+        call_params = self.client.make_request.call_args[0][2]
+        self.assertEqual(call_params["top"], 25, "top should match custom page_size")
+
+    def test_pagination_params_with_default_page_size(self):
+        """Test that default page_size (100) is used when not configured."""
+        self.client.config = {}  # No page_size
+        stream = MockStream(self.client, self.catalog)
+        stream.data_key = "data"
+        
+        self.client.make_request.side_effect = [
+            {"data": [{"id": i} for i in range(100)], "metadata": {"totalRecords": 100, "skip": 0}},
+        ]
+        
+        list(stream.get_records())
+        
+        call_params = self.client.make_request.call_args[0][2]
+        self.assertEqual(call_params["top"], 100, "top should be default 100")
 
 
 class TestPageSizeConfiguration(unittest.TestCase):
