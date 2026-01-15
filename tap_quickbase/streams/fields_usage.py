@@ -11,6 +11,7 @@ class FieldsUsage(FullTableStream):
     replication_keys = []
     path = "v1/fields/usage?tableId={tableId}"
     parent = "app_tables"
+    children = ["get_field_usage"]
 
     def modify_object(self, record, parent_record=None):
         """Flatten field and usage objects and add tableId from parent record."""
