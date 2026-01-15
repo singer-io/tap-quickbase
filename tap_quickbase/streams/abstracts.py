@@ -102,24 +102,116 @@ class BaseStream(ABC):
          - https://github.com/singer-io/getting-started/blob/master/docs/SYNC_MODE.md
         """
 
+    def _create_page_signature(self, raw_records: List) -> Any:
+        """Create a signature for a page of records to detect duplicates."""
+        if not raw_records:
+            return None
+
+        try:
+            # Try to extract IDs from records for signature
+            first_id = raw_records[0].get('id') or raw_records[0].get('field', {}).get('id')
+            last_id = raw_records[-1].get('id') or raw_records[-1].get('field', {}).get('id')
+            if first_id is not None and last_id is not None:
+                return (first_id, last_id, len(raw_records))
+            # Fall back to hash if IDs not available
+            return hash(json.dumps(raw_records, sort_keys=True))
+        except (KeyError, TypeError, ValueError):
+            # If any error, use hash
+            return hash(json.dumps(raw_records, sort_keys=True))
+
+    def _check_duplicate_page(self, page_signature: Any, last_signature: Any,
+                             dup_count: int) -> Tuple[bool, int]:
+        """Check if current page is a duplicate of the last page.
+
+        Returns:
+            Tuple of (should_break, new_dup_count)
+        """
+        if page_signature == last_signature:
+            new_dup_count = dup_count + 1
+            if new_dup_count >= 2:
+                LOGGER.warning(
+                    "Stream %s: API returned identical page %s times. "
+                    "API may not support pagination. Stopping to prevent duplicates.",
+                    self.tap_stream_id,
+                    new_dup_count + 1
+                )
+                return True, new_dup_count
+            return False, new_dup_count
+        return False, 0
+
+    def _process_records_with_dedup(self, raw_records: List,
+                                   seen_ids: set) -> Iterator:
+        """Process records and skip duplicates.
+
+        Yields:
+            Non-duplicate records
+        """
+        for record in raw_records:
+            try:
+                # Try to extract a unique identifier
+                record_id = record.get('id') or record.get('field', {}).get('id')
+                if record_id is not None:
+                    record_key = (self.tap_stream_id, record_id)
+                    if record_key in seen_ids:
+                        continue
+                    seen_ids.add(record_key)
+            except (KeyError, TypeError, AttributeError):
+                pass
+
+            yield record
+
+    def _should_continue_pagination(self, num_records: int, page_size: int,
+                                   response: Any, skip: int) -> Tuple[bool, int]:
+        """Determine if pagination should continue.
+
+        Returns:
+            Tuple of (should_continue, new_skip)
+        """
+        # If API returns fewer records than requested, it's the last page
+        if num_records < page_size:
+            LOGGER.info(
+                "Stream %s: Received %s records (less than page_size=%s). Last page.",
+                self.tap_stream_id,
+                num_records,
+                page_size
+            )
+            return False, skip
+
+        # If metadata available, use it to determine if more pages exist
+        if isinstance(response, dict) and "metadata" in response:
+            total_records = response["metadata"].get("totalRecords", 0)
+            new_skip = skip + num_records
+            if new_skip >= total_records:
+                LOGGER.info(
+                    "Stream %s: Reached total_records=%s from metadata",
+                    self.tap_stream_id,
+                    total_records
+                )
+                return False, new_skip
+            return True, new_skip
+
+        # No metadata - increment skip and continue
+        return True, skip + num_records
+
     def get_records(self) -> Iterator:
         """Interacts with api client interaction and pagination."""
-        page_size = self.client.config.get("page_size", DEFAULT_PAGE_SIZE)
-        skip = 0
+        # Initialize pagination state
+        state = {
+            'page_size': self.client.config.get("page_size", DEFAULT_PAGE_SIZE),
+            'skip': 0,
+            'iteration': 0,
+            'seen_ids': set(),
+            'dup_pages': 0,
+            'last_sig': None
+        }
         max_iterations = 10000  # Safety limit to prevent infinite loops
-        iteration = 0
-        
-        # Track seen records to detect duplicate pages (API not supporting pagination)
-        seen_record_ids = set()
-        consecutive_duplicate_pages = 0
-        last_page_signature = None
 
-        while iteration < max_iterations:
-            iteration += 1
+        while state['iteration'] < max_iterations:
+            state['iteration'] += 1
 
             # Add pagination params for this request
             pagination_params = self.params.copy()
-            pagination_params.update({"skip": skip, "top": page_size})
+            pagination_params.update({"skip": state['skip'], "top": state['page_size']})
 
             response = self.client.make_request(
                 self.http_method,
@@ -133,69 +225,32 @@ class BaseStream(ABC):
             # Extract and yield records
             raw_records = self._extract_records(response)
             num_records = len(raw_records)
-            
+
             if num_records == 0:
                 LOGGER.info(
                     "No more records for stream %s after %s iterations",
                     self.tap_stream_id,
-                    iteration
+                    state['iteration']
                 )
                 break
 
-            # Create a signature of this page to detect if we're getting the same page repeatedly
-            # Use first and last record IDs if available, otherwise use hash of entire page
-            page_signature = None
-            if raw_records:
-                try:
-                    # Try to extract IDs from records for signature
-                    first_id = raw_records[0].get('id') or raw_records[0].get('field', {}).get('id')
-                    last_id = raw_records[-1].get('id') or raw_records[-1].get('field', {}).get('id')
-                    if first_id is not None and last_id is not None:
-                        page_signature = (first_id, last_id, num_records)
-                    else:
-                        # Fall back to hash if IDs not available
-                        page_signature = hash(json.dumps(raw_records, sort_keys=True))
-                except:
-                    # If any error, use hash
-                    page_signature = hash(json.dumps(raw_records, sort_keys=True))
+            # Check for duplicate pages
+            page_sig = self._create_page_signature(raw_records)
+            should_break, state['dup_pages'] = self._check_duplicate_page(
+                page_sig, state['last_sig'], state['dup_pages']
+            )
+            if should_break:
+                break
+            state['last_sig'] = page_sig
 
-            # Detect if we're getting the same page repeatedly
-            if page_signature == last_page_signature:
-                consecutive_duplicate_pages += 1
-                if consecutive_duplicate_pages >= 2:
-                    LOGGER.warning(
-                        "Stream %s: API returned identical page %s times. "
-                        "API may not support pagination. Stopping to prevent duplicates.",
-                        self.tap_stream_id,
-                        consecutive_duplicate_pages + 1
-                    )
-                    break
-            else:
-                consecutive_duplicate_pages = 0
-                last_page_signature = page_signature
-
-            # Track record IDs to detect duplicates
-            new_records_count = 0
-            for record in raw_records:
-                # Try to extract a unique identifier
-                record_id = None
-                try:
-                    # Try different ID fields
-                    record_id = record.get('id') or record.get('field', {}).get('id')
-                    if record_id is not None:
-                        record_key = (self.tap_stream_id, record_id)
-                        if record_key in seen_record_ids:
-                            # Skip duplicate record
-                            continue
-                        seen_record_ids.add(record_key)
-                except:
-                    pass
-                
-                new_records_count += 1
+            # Process records and skip duplicates
+            new_count = 0
+            for record in self._process_records_with_dedup(raw_records, state['seen_ids']):
+                new_count += 1
                 yield record
 
             # If we yielded no new records, we've seen everything
-            if new_records_count == 0:
+            if new_count == 0:
                 LOGGER.info(
                     "Stream %s: All %s records were duplicates. Pagination complete.",
                     self.tap_stream_id,
@@ -203,34 +258,15 @@ class BaseStream(ABC):
                 )
                 break
 
-            # Check if we should continue paginating
-            # If API returns fewer records than requested, it's the last page
-            if num_records < page_size:
-                LOGGER.info(
-                    "Stream %s: Received %s records (less than page_size=%s). Last page.",
-                    self.tap_stream_id,
-                    num_records,
-                    page_size
-                )
+            # Determine if we should continue pagination
+            should_continue, state['skip'] = self._should_continue_pagination(
+                num_records, state['page_size'], response, state['skip']
+            )
+            if not should_continue:
                 break
 
-            # If metadata available, use it to determine if more pages exist
-            if isinstance(response, dict) and "metadata" in response:
-                total_records = response["metadata"].get("totalRecords", 0)
-                skip += num_records
-                if skip >= total_records:
-                    LOGGER.info(
-                        "Stream %s: Reached total_records=%s from metadata",
-                        self.tap_stream_id,
-                        total_records
-                    )
-                    break
-            else:
-                # No metadata - increment skip and continue
-                skip += num_records
-
         # Log if we hit max iterations
-        if iteration >= max_iterations:
+        if state['iteration'] >= max_iterations:
             LOGGER.error(
                 "Stream %s: Hit maximum iteration limit of %s. "
                 "This indicates a serious pagination bug.",
