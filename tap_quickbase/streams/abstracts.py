@@ -18,6 +18,8 @@ from singer import (
 )
 import singer.utils as singer_utils
 
+from tap_quickbase.exceptions import QuickbaseForbiddenError
+
 LOGGER = get_logger()
 DEFAULT_PAGE_SIZE = 100
 
@@ -321,8 +323,6 @@ class BaseStream(ABC):
 
     def sync_child_streams(self, state: Dict, transformer: Transformer, record: Dict) -> None:
         """Write schema and sync child streams."""
-        from tap_quickbase.exceptions import QuickbaseForbiddenError
-        
         for child in self.child_to_sync:
             if child.is_selected():
                 child.write_schema()
@@ -333,8 +333,10 @@ class BaseStream(ABC):
             except QuickbaseForbiddenError as err:
                 # Log warning and continue if child resource is forbidden
                 LOGGER.warning(
-                    f"Skipping {child.tap_stream_id} for parent record {record.get('id')}: "
-                    f"{err.message}"
+                    "Skipping %s for parent record %s: %s",
+                    child.tap_stream_id,
+                    record.get('id'),
+                    err.message
                 )
                 continue
 
