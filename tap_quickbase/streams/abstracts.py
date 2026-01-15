@@ -106,11 +106,16 @@ class BaseStream(ABC):
         """Interacts with api client interaction and pagination."""
         page_size = self.client.config.get("page_size", DEFAULT_PAGE_SIZE)
         skip = 0
-        has_more_pages = True
         max_iterations = 10000  # Safety limit to prevent infinite loops
+        iteration = 0
+        
+        # Track seen records to detect duplicate pages (API not supporting pagination)
+        seen_record_ids = set()
+        consecutive_duplicate_pages = 0
+        last_page_signature = None
 
-        while has_more_pages and max_iterations > 0:
-            max_iterations -= 1
+        while iteration < max_iterations:
+            iteration += 1
 
             # Add pagination params for this request
             pagination_params = self.params.copy()
@@ -125,31 +130,112 @@ class BaseStream(ABC):
                 path=self.path
             )
 
-            # Extract records from response
+            # Extract and yield records
             raw_records = self._extract_records(response)
             num_records = len(raw_records)
+            
+            if num_records == 0:
+                LOGGER.info(
+                    "No more records for stream %s after %s iterations",
+                    self.tap_stream_id,
+                    iteration
+                )
+                break
 
-            yield from raw_records
+            # Create a signature of this page to detect if we're getting the same page repeatedly
+            # Use first and last record IDs if available, otherwise use hash of entire page
+            page_signature = None
+            if raw_records:
+                try:
+                    # Try to extract IDs from records for signature
+                    first_id = raw_records[0].get('id') or raw_records[0].get('field', {}).get('id')
+                    last_id = raw_records[-1].get('id') or raw_records[-1].get('field', {}).get('id')
+                    if first_id is not None and last_id is not None:
+                        page_signature = (first_id, last_id, num_records)
+                    else:
+                        # Fall back to hash if IDs not available
+                        page_signature = hash(json.dumps(raw_records, sort_keys=True))
+                except:
+                    # If any error, use hash
+                    page_signature = hash(json.dumps(raw_records, sort_keys=True))
 
-            # Stop if no records returned or fewer records than expected page size
-            # Most Quickbase endpoints return all records in single response
-            if num_records == 0 or num_records < page_size:
-                has_more_pages = False
-                continue
+            # Detect if we're getting the same page repeatedly
+            if page_signature == last_page_signature:
+                consecutive_duplicate_pages += 1
+                if consecutive_duplicate_pages >= 2:
+                    LOGGER.warning(
+                        "Stream %s: API returned identical page %s times. "
+                        "API may not support pagination. Stopping to prevent duplicates.",
+                        self.tap_stream_id,
+                        consecutive_duplicate_pages + 1
+                    )
+                    break
+            else:
+                consecutive_duplicate_pages = 0
+                last_page_signature = page_signature
 
+            # Track record IDs to detect duplicates
+            new_records_count = 0
+            for record in raw_records:
+                # Try to extract a unique identifier
+                record_id = None
+                try:
+                    # Try different ID fields
+                    record_id = record.get('id') or record.get('field', {}).get('id')
+                    if record_id is not None:
+                        record_key = (self.tap_stream_id, record_id)
+                        if record_key in seen_record_ids:
+                            # Skip duplicate record
+                            continue
+                        seen_record_ids.add(record_key)
+                except:
+                    pass
+                
+                new_records_count += 1
+                yield record
+
+            # If we yielded no new records, we've seen everything
+            if new_records_count == 0:
+                LOGGER.info(
+                    "Stream %s: All %s records were duplicates. Pagination complete.",
+                    self.tap_stream_id,
+                    num_records
+                )
+                break
+
+            # Check if we should continue paginating
+            # If API returns fewer records than requested, it's the last page
+            if num_records < page_size:
+                LOGGER.info(
+                    "Stream %s: Received %s records (less than page_size=%s). Last page.",
+                    self.tap_stream_id,
+                    num_records,
+                    page_size
+                )
+                break
+
+            # If metadata available, use it to determine if more pages exist
             if isinstance(response, dict) and "metadata" in response:
                 total_records = response["metadata"].get("totalRecords", 0)
                 skip += num_records
                 if skip >= total_records:
-                    has_more_pages = False
+                    LOGGER.info(
+                        "Stream %s: Reached total_records=%s from metadata",
+                        self.tap_stream_id,
+                        total_records
+                    )
+                    break
             else:
-                has_more_pages = False
+                # No metadata - increment skip and continue
+                skip += num_records
 
-        if max_iterations == 0:
-            LOGGER.warning(
-                "Maximum iteration limit reached for stream %s. "
-                "This indicates an infinite loop.",
-                self.tap_stream_id
+        # Log if we hit max iterations
+        if iteration >= max_iterations:
+            LOGGER.error(
+                "Stream %s: Hit maximum iteration limit of %s. "
+                "This indicates a serious pagination bug.",
+                self.tap_stream_id,
+                max_iterations
             )
 
     def _extract_records(self, response) -> List:
