@@ -361,8 +361,17 @@ class BaseStream(ABC):
         # Then check for tableId in nested query structure (table_reports)
         if 'query' in parent_obj and 'tableId' in parent_obj.get('query', {}):
             return str(parent_obj['query']['tableId'])
-        # Fall back to id as last resort
-        return str(parent_obj.get('id', ''))
+        # Fall back to id as last resort, but warn and ensure it's non-empty
+        fallback_id = parent_obj.get('id')
+        if fallback_id:
+            LOGGER.warning(
+                "Falling back to parent 'id' (%s) as tableId for parent object: %s",
+                fallback_id,
+                parent_obj,
+            )
+            return str(fallback_id)
+        LOGGER.error("Unable to determine tableId from parent object: %s", parent_obj)
+        raise ValueError("Missing tableId in parent object for URL endpoint resolution")
 
 
 class IncrementalStream(BaseStream):
