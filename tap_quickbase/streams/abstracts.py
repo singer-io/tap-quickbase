@@ -322,10 +322,8 @@ class BaseStream(ABC):
         return {'id': field.get('id'), **usage}
 
     def sync_child_streams(self, state: Dict, transformer: Transformer, record: Dict) -> None:
-        """Write schema and sync child streams."""
+        """Sync child streams (schemas already written at start, state written at end)."""
         for child in self.child_to_sync:
-            if child.is_selected():
-                child.write_schema()
             set_currently_syncing(state, child.tap_stream_id)
             write_state(state)
             try:
