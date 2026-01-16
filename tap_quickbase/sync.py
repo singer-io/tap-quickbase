@@ -20,6 +20,17 @@ def update_currently_syncing(state: Dict, stream_name: str) -> None:
     singer.write_state(state)
 
 
+def write_schemas_recursive(stream) -> None:
+    """
+    Write schema for stream and all its children recursively
+    """
+    if stream.is_selected():
+        stream.write_schema()
+    
+    for child in stream.child_to_sync:
+        write_schemas_recursive(child)
+
+
 def setup_children(stream, client, streams_to_sync, catalog) -> None:
     """
     Setup children for stream if they're selected to sync (recursively)
@@ -60,9 +71,8 @@ def sync(client: Client, config: Dict, catalog: singer.Catalog, state) -> None: 
             # Setup children relationships
             setup_children(stream, client, streams_to_sync, catalog)
 
-            # Write schema for the stream if selected
-            if stream.is_selected():
-                stream.write_schema()
+            # Write all schemas (parent and children) at the start
+            write_schemas_recursive(stream)
 
             LOGGER.info("START Syncing: %s", stream_name)
             update_currently_syncing(state, stream_name)
@@ -72,3 +82,6 @@ def sync(client: Client, config: Dict, catalog: singer.Catalog, state) -> None: 
             LOGGER.info(
                 "FINISHED Syncing: %s, total_records: %s", stream_name, total_records
             )
+            
+            # Write final state after stream completes
+            singer.write_state(state)
