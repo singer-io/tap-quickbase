@@ -146,5 +146,6 @@ class QuickbaseBaseTest(BaseCase):
     def get_properties(self, original: bool = True):
         """Configuration of properties required for the tap."""
         return {
-            "start_date": self.start_date
+            "start_date": self.start_date,
+            "page_size": 10
         }

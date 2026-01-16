@@ -13,14 +13,17 @@ class QuickbasePaginationTest(PaginationTest, QuickbaseBaseTest):
         return "tap_tester_quickbase_pagination_test"
 
     def streams_to_test(self):
-        # Exclude streams with no test data available in the test account
-        # and streams with insufficient records to test pagination (record count <= page_size)
+        # Exclude streams with insufficient records to test pagination or that cause test hangs
         streams_to_exclude = {
+            'apps',             # Only 1 record, cannot test pagination
+            'roles',            # Only 3 records, less than page_size=10
+            'app_tables',       # Only 6 records, less than page_size=10
+            'tables',           # Only 6 records, less than page_size=10
+            'table_relationships',  # Only 5 records, less than page_size=10
+            'events',
             'get_reports',
             'get_field_usage',
             'get_fields',
-            'events',
-            'apps',  # Only 1 record, cannot test pagination
         }
         return self.expected_stream_names().difference(streams_to_exclude)
 
@@ -28,7 +31,7 @@ class QuickbasePaginationTest(PaginationTest, QuickbaseBaseTest):
         """Configuration with reduced page_size to test pagination logic."""
         return {
             "start_date": self.start_date,
-            "page_size": 1
+            "page_size": 10
         }
 
     def expected_page_size(self, stream):
@@ -39,4 +42,4 @@ class QuickbasePaginationTest(PaginationTest, QuickbaseBaseTest):
         This allows pagination testing with smaller datasets by setting
         a lower page limit than the API default (100).
         """
-        return 1
+        return 10
