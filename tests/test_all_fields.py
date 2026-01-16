@@ -19,8 +19,6 @@ class QuickbaseAllFields(AllFieldsTest, QuickbaseBaseTest):
         # Exclude child streams with no test data or that cause test hangs
         streams_to_exclude = {
             'events',
-            'get_reports',
-            'get_field_usage',
-            'get_fields',
+            'reports',
         }
         return self.expected_stream_names().difference(streams_to_exclude)

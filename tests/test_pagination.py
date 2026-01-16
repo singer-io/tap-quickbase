@@ -15,15 +15,13 @@ class QuickbasePaginationTest(PaginationTest, QuickbaseBaseTest):
     def streams_to_test(self):
         # Exclude streams with insufficient records to test pagination or that cause test hangs
         streams_to_exclude = {
-            'apps',             # Only 1 record, cannot test pagination
-            'roles',            # Only 3 records, less than page_size=10
-            'app_tables',       # Only 6 records, less than page_size=10
-            'tables',           # Only 6 records, less than page_size=10
-            'table_relationships',  # Only 5 records, less than page_size=10
+            'apps',
+            'roles',
+            'app_tables',
+            'tables',
+            'table_relationships',
             'events',
-            'get_reports',
-            'get_field_usage',
-            'get_fields',
+            'reports',
         }
         return self.expected_stream_names().difference(streams_to_exclude)
 
