@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 from parameterized import parameterized
 from requests.exceptions import Timeout, ConnectionError, ChunkedEncodingError
 from tap_quickbase.client import Client
+from tap_quickbase.client import REQUEST_TIMEOUT as DEFAULT_REQUEST_TIMEOUT
 from tap_quickbase.exceptions import (
     QuickbaseBadRequestError,
     QuickbaseUnauthorizedError,
@@ -17,9 +18,6 @@ from tap_quickbase.exceptions import (
     QuickbaseBadGatewayError,
     QuickbaseServiceUnavailableError
 )
-
-
-DEFAULT_REQUEST_TIMEOUT = 300
 
 
 class TestClientInitialization(unittest.TestCase):
