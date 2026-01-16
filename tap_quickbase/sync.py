@@ -26,7 +26,7 @@ def write_schemas_recursive(stream) -> None:
     """
     if stream.is_selected():
         stream.write_schema()
-    
+
     for child in stream.child_to_sync:
         write_schemas_recursive(child)
 
@@ -82,6 +82,6 @@ def sync(client: Client, config: Dict, catalog: singer.Catalog, state) -> None: 
             LOGGER.info(
                 "FINISHED Syncing: %s, total_records: %s", stream_name, total_records
             )
-            
+
             # Write final state after stream completes
             singer.write_state(state)
