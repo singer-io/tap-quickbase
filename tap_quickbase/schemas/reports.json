@@ -7,6 +7,12 @@
                 "string"
             ]
         },
+        "tableId": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
         "name": {
             "type": [
                 "null",

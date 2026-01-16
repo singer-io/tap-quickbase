@@ -22,6 +22,7 @@ from tap_quickbase.exceptions import QuickbaseForbiddenError
 
 LOGGER = get_logger()
 DEFAULT_PAGE_SIZE = 100
+MAX_PAGINATION_ITERATIONS = 10000  # Safety limit to prevent infinite loops
 
 
 class BaseStream(ABC):
@@ -200,9 +201,8 @@ class BaseStream(ABC):
             'dup_pages': 0,
             'last_sig': None
         }
-        max_iterations = 10000  # Safety limit to prevent infinite loops
 
-        while state['iteration'] < max_iterations:
+        while state['iteration'] < MAX_PAGINATION_ITERATIONS:
             state['iteration'] += 1
 
             # Add pagination params for this request
@@ -262,12 +262,16 @@ class BaseStream(ABC):
                 break
 
         # Log if we hit max iterations
-        if state['iteration'] >= max_iterations:
+        if state['iteration'] >= MAX_PAGINATION_ITERATIONS:
             LOGGER.error(
                 "Stream %s: Hit maximum iteration limit of %s. "
-                "This indicates a serious pagination bug.",
+                "This indicates a serious pagination bug. "
+                "Check pagination configuration (page size, skip/offset, and any API-specific cursors) "
+                "and verify the source API is returning expected pagination fields. "
+                "If this issue persists, contact support or review stream configuration for potential "
+                "duplicate pages or incorrect pagination parameters.",
                 self.tap_stream_id,
-                max_iterations
+                MAX_PAGINATION_ITERATIONS
             )
 
     def _extract_records(self, response) -> List:
@@ -365,12 +369,12 @@ class BaseStream(ABC):
         fallback_id = parent_obj.get('id')
         if fallback_id:
             LOGGER.warning(
-                "Falling back to parent 'id' (%s) as tableId for parent object: %s",
+                "Falling back to parent 'id' (%s) as tableId for parent object with keys: %s",
                 fallback_id,
-                parent_obj,
+                list(parent_obj.keys()),
             )
             return str(fallback_id)
-        LOGGER.error("Unable to determine tableId from parent object: %s", parent_obj)
+        LOGGER.error("Unable to determine tableId from parent object with keys: %s", list(parent_obj.keys()))
         raise ValueError("Missing tableId in parent object for URL endpoint resolution")
 
 
@@ -574,8 +578,7 @@ class PseudoIncrementalStream(BaseStream):
                 # Get updated field from record
                 record_updated_str = record.get(self.bookmark_field)
                 if not record_updated_str:
-                    # No updated field, skip this record (or emit it?)
-                    # For safety, we'll skip records without updated field
+                    # Skip records without updated field
                     LOGGER.warning(
                         "Record in %s missing '%s' field, skipping",
                         self.tap_stream_id,
@@ -670,7 +673,7 @@ class ChildBaseStream(IncrementalStream):
     """Base Class for Child Stream."""
     def __init__(self, client, catalog):
         super().__init__(client, catalog)
-        self.bookmark_value = None  # Initialize to avoid access-before-definition
+        self.bookmark_value = None  # Initialize singleton bookmark value for child stream
 
     def get_bookmark(self, state: Dict, stream: str, key: Any = None) -> int:
         """Singleton bookmark value for child streams."""

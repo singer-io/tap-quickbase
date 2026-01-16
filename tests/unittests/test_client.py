@@ -20,9 +20,6 @@ from tap_quickbase.exceptions import (
 )
 
 
-DEFAULT_REQUEST_TIMEOUT = 300
-
-
 class TestClientInitialization(unittest.TestCase):
     """Test client initialization and configuration."""
 
