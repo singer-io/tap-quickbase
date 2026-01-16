@@ -1,11 +1,15 @@
-from tap_quickbase.streams.abstracts import ChildBaseStream
+"""App tables stream definition."""
 
-class AppTables(ChildBaseStream):
+from tap_quickbase.streams.abstracts import PseudoIncrementalStream
+
+
+class AppTables(PseudoIncrementalStream):
+    """App tables stream."""
     tap_stream_id = "app_tables"
     key_properties = ["id"]
-    replication_method = "INCREMENTAL"
-    replication_keys = ["updated"]
+    replication_method = "FULL_TABLE"
+    replication_keys = []
     path = "v1/tables?appId={appId}"
     parent = "apps"
-    bookmark_value = None
-
+    children = ["tables", "table_relationships", "table_reports", "fields", "fields_usage"]
+    bookmark_field = "updated"

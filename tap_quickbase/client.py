@@ -1,15 +1,27 @@
+"""Quickbase API client and HTTP request helpers."""
+
+import json
 from typing import Any, Dict, Mapping, Optional, Tuple
 
 import backoff
 import requests
 from requests import session
-from requests.exceptions import Timeout, ConnectionError, ChunkedEncodingError
+from requests.exceptions import (
+    ChunkedEncodingError,
+    ConnectionError as RequestsConnectionError,
+    Timeout,
+)
 from singer import get_logger, metrics
 
-from tap_quickbase.exceptions import ERROR_CODE_EXCEPTION_MAPPING, QuickbaseError, QuickbaseBackoffError
+from tap_quickbase.exceptions import (
+    ERROR_CODE_EXCEPTION_MAPPING,
+    QuickbaseBackoffError,
+    QuickbaseError,
+)
 
 LOGGER = get_logger()
 REQUEST_TIMEOUT = 300
+
 
 def raise_for_error(response: requests.Response) -> None:
     """Raises the associated response exception. Takes in a response object,
@@ -20,16 +32,22 @@ def raise_for_error(response: requests.Response) -> None:
     """
     try:
         response_json = response.json()
-    except Exception:
+    except json.JSONDecodeError:
         response_json = {}
     if response.status_code not in [200, 201, 204]:
         if response_json.get("error"):
-            message = f"HTTP-error-code: {response.status_code}, Error: {response_json.get('error')}"
+            message = (
+                f"HTTP-error-code: {response.status_code}, "
+                f"Error: {response_json.get('error')}"
+            )
         else:
             error_message = ERROR_CODE_EXCEPTION_MAPPING.get(
                 response.status_code, {}
             ).get("message", "Unknown Error")
-            message = f"HTTP-error-code: {response.status_code}, Error: {response_json.get('message', error_message)}"
+            message = (
+                f"HTTP-error-code: {response.status_code}, "
+                f"Error: {response_json.get('message', error_message)}"
+            )
         exc = ERROR_CODE_EXCEPTION_MAPPING.get(response.status_code, {}).get(
             "raise_exception", QuickbaseError
         )
@@ -48,26 +66,31 @@ class Client:
     def __init__(self, config: Mapping[str, Any]) -> None:
         self.config = config
         self._session = session()
-        self.base_url = "https://api.quickbase.com/"
+        self.base_url = "https://api.quickbase.com"
         config_request_timeout = config.get("request_timeout")
-        self.request_timeout = float(config_request_timeout) if config_request_timeout else REQUEST_TIMEOUT
+        self.request_timeout = (
+            float(config_request_timeout)
+            if config_request_timeout
+            else REQUEST_TIMEOUT
+        )
 
     def __enter__(self):
-        self.check_api_credentials()
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
         self._session.close()
 
-    def check_api_credentials(self) -> None:
-        pass
-
     def authenticate(self, headers: Dict, params: Dict) -> Tuple[Dict, Dict]:
         """Authenticates the request with the token"""
-        headers["Authorization"] = self.config["access_token"]
+        headers["Authorization"] = f"QB-USER-TOKEN {self.config['access_token']}"
+        # QB-Realm-Hostname is required for QuickBase API requests
+        headers["QB-Realm-Hostname"] = self.config.get(
+            "realm_hostname", "api.quickbase.com"
+        )
+        headers["User-Agent"] = "tap-quickbase/1.0.0"
         return headers, params
 
-    def make_request(
+    def make_request(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         method: str,
         endpoint: str,
@@ -96,7 +119,7 @@ class Client:
         wait_gen=backoff.expo,
         exception=(
             ConnectionResetError,
-            ConnectionError,
+            RequestsConnectionError,
             ChunkedEncodingError,
             Timeout,
             QuickbaseBackoffError
@@ -109,14 +132,22 @@ class Client:
     ) -> Optional[Mapping[Any, Any]]:
         """Performs HTTP Operations."""
         method = method.upper()
-        with metrics.http_request_timer(endpoint):
-            if method in ("GET", "POST"):
-                if method == "GET":
-                    kwargs.pop("data", None)
-                response = self._session.request(method, endpoint, **kwargs)
-                raise_for_error(response)
+        if method not in ("GET", "POST"):
+            raise ValueError(f"Unsupported method: {method}")
+
+        # Handle request body for different methods
+        if method == "GET":
+            kwargs.pop("data", None)
+            kwargs.pop("json", None)
+        elif "data" in kwargs:
+            data = kwargs.pop("data")
+            if isinstance(data, str):
+                kwargs["json"] = json.loads(data)
             else:
-                raise ValueError(f"Unsupported method: {method}")
+                kwargs["json"] = data
+
+        with metrics.http_request_timer(endpoint):
+            response = self._session.request(method, endpoint, **kwargs)
+            raise_for_error(response)
 
         return response.json()
-

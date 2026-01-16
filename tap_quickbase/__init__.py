@@ -1,3 +1,5 @@
+"""Singer tap for Quickbase."""
+
 import sys
 import json
 import singer
@@ -8,6 +10,7 @@ from tap_quickbase.sync import sync
 LOGGER = singer.get_logger()
 
 REQUIRED_CONFIG_KEYS = ['access_token', 'start_date']
+
 
 def do_discover():
     """
@@ -42,4 +45,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

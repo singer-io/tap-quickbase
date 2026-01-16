@@ -13,7 +13,7 @@ class ConcreteParentBaseStream(ParentBaseStream):
 
     @property
     def replication_method(self):
-        return "INCREMENTAL"
+        return "FULL_TABLE"
 
     @property
     def tap_stream_id(self):

@@ -1,6 +1,12 @@
 {
     "type": "object",
     "properties": {
+        "tableId": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
         "childTableId": {
             "type": [
                 "null",

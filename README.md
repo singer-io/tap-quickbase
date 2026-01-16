@@ -22,15 +22,11 @@ This tap:
 
     - [TableReports](https://developer.quickbase.com/operation/getTableReports)
 
-    - [GetReports](https://developer.quickbase.com/operation/getReport)
+    - [Reports](https://developer.quickbase.com/operation/getReport)
 
     - [Fields](https://developer.quickbase.com/operation/getFields)
 
-    - [GetFields](https://developer.quickbase.com/operation/getField)
-
     - [FieldsUsage](https://developer.quickbase.com/operation/getFieldsUsage)
-
-    - [GetFieldUsage](https://developer.quickbase.com/operation/getFieldUsage)
 
 - Outputs the schema for each resource
 - Incrementally pulls data based on the input state
@@ -41,7 +37,7 @@ This tap:
 
 **[apps](https://developer.quickbase.com/operation/getApp)**
 - Primary keys: ['id']
-- Replication strategy: INCREMENTAL
+- Replication strategy: FULL_TABLE
 
 **[events](https://developer.quickbase.com/operation/getAppEvents)**
 - Primary keys: ['id']
@@ -53,38 +49,30 @@ This tap:
 
 **[app_tables](https://developer.quickbase.com/operation/getAppTables)**
 - Primary keys: ['id']
-- Replication strategy: INCREMENTAL
+- Replication strategy: FULL_TABLE
 
 **[tables](https://developer.quickbase.com/operation/getTable)**
 - Primary keys: ['id']
-- Replication strategy: INCREMENTAL
+- Replication strategy: FULL_TABLE
 
 **[table_relationships](https://developer.quickbase.com/operation/getRelationships)**
-- Primary keys: ['id']
+- Primary keys: ['id', 'tableId']
 - Replication strategy: FULL_TABLE
 
 **[table_reports](https://developer.quickbase.com/operation/getTableReports)**
-- Primary keys: ['id']
+- Primary keys: ['id', 'tableId']
 - Replication strategy: FULL_TABLE
 
-**[get_reports](https://developer.quickbase.com/operation/getReport)**
+**[reports](https://developer.quickbase.com/operation/getReport)**
 - Primary keys: ['id']
 - Replication strategy: FULL_TABLE
 
 **[fields](https://developer.quickbase.com/operation/getFields)**
-- Primary keys: ['id']
-- Replication strategy: FULL_TABLE
-
-**[get_fields](https://developer.quickbase.com/operation/getField)**
-- Primary keys: ['id']
+- Primary keys: ['id', 'tableId']
 - Replication strategy: FULL_TABLE
 
 **[fields_usage](https://developer.quickbase.com/operation/getFieldsUsage)**
-- Primary keys: ['id']
-- Replication strategy: FULL_TABLE
-
-**[get_field_usage](https://developer.quickbase.com/operation/getFieldUsage)**
-- Primary keys: ['id']
+- Primary keys: ['id', 'tableId']
 - Replication strategy: FULL_TABLE
 
 
@@ -116,14 +104,20 @@ This tap:
     - [target-stitch](https://github.com/singer-io/target-stitch)
 
 3. Create your tap's `config.json` file.  The tap config file for this tap should include these entries:
-   - `start_date` - the default value to use if no bookmark exists for an endpoint (rfc3339 date string)
-   - `user_agent` (string, optional): Process and email for API logging purposes. Example: `tap-quickbase <api_user_email@your_company.com>`
-   - `request_timeout` (integer, `300`): Max time for which request should wait to get a response. Default request_timeout is 300 seconds.
+   - `access_token` (string, required): Quickbase API authentication token
+   - `realm_hostname` (string, required): Quickbase realm hostname (e.g., `your-realm.quickbase.com`)
+   - `app_id` (string, required): Quickbase application ID
+   - `start_date` (string, required): The default value to use if no bookmark exists for an endpoint (rfc3339 date string)
+   - `page_size` (integer, optional): Number of records to fetch per page. Default is 100.
+   - `request_timeout` (integer, optional): Max time for which request should wait to get a response. Default is 300 seconds.
 
     ```json
     {
-        "start_date": "2019-01-01T00:00:00Z",
-        "user_agent": "tap-quickbase <api_user_email@your_company.com>",
+        "access_token": "your_quickbase_access_token",
+        "realm_hostname": "your-realm.quickbase.com",
+        "app_id": "your_app_id",
+        "start_date": "2023-01-01T00:00:00Z",
+        "page_size": 100,
         "request_timeout": 300
     }
     ```

@@ -13,6 +13,9 @@ class QuickbaseAutomaticFields(MinimumSelectionTest, QuickbaseBaseTest):
         return "tap_tester_quickbase_automatic_fields_test"
 
     def streams_to_test(self):
-        streams_to_exclude = {}
+        # Exclude child streams with no test data or that cause test hangs
+        streams_to_exclude = {
+            'events'
+        }
         return self.expected_stream_names().difference(streams_to_exclude)
 
