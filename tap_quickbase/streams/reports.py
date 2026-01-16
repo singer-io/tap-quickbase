@@ -1,11 +1,11 @@
-"""GetReports stream definition."""
+"""Reports stream definition."""
 
 from tap_quickbase.streams.abstracts import FullTableStream
 
 
-class GetReports(FullTableStream):
-    """GetReports stream."""
-    tap_stream_id = "get_reports"
+class Reports(FullTableStream):
+    """Reports stream."""
+    tap_stream_id = "reports"
     key_properties = ["id"]
     replication_method = "FULL_TABLE"
     replication_keys = []

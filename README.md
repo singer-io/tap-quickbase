@@ -22,15 +22,11 @@ This tap:
 
     - [TableReports](https://developer.quickbase.com/operation/getTableReports)
 
-    - [GetReports](https://developer.quickbase.com/operation/getReport)
+    - [Reports](https://developer.quickbase.com/operation/getReport)
 
     - [Fields](https://developer.quickbase.com/operation/getFields)
 
-    - [GetFields](https://developer.quickbase.com/operation/getField)
-
     - [FieldsUsage](https://developer.quickbase.com/operation/getFieldsUsage)
-
-    - [GetFieldUsage](https://developer.quickbase.com/operation/getFieldUsage)
 
 - Outputs the schema for each resource
 - Incrementally pulls data based on the input state
@@ -67,7 +63,7 @@ This tap:
 - Primary keys: ['id', 'tableId']
 - Replication strategy: FULL_TABLE
 
-**[get_reports](https://developer.quickbase.com/operation/getReport)**
+**[reports](https://developer.quickbase.com/operation/getReport)**
 - Primary keys: ['id']
 - Replication strategy: FULL_TABLE
 
@@ -75,16 +71,8 @@ This tap:
 - Primary keys: ['id', 'tableId']
 - Replication strategy: FULL_TABLE
 
-**[get_fields](https://developer.quickbase.com/operation/getField)**
-- Primary keys: ['id']
-- Replication strategy: FULL_TABLE
-
 **[fields_usage](https://developer.quickbase.com/operation/getFieldsUsage)**
 - Primary keys: ['id', 'tableId']
-- Replication strategy: FULL_TABLE
-
-**[get_field_usage](https://developer.quickbase.com/operation/getFieldUsage)**
-- Primary keys: ['id']
 - Replication strategy: FULL_TABLE
 
 

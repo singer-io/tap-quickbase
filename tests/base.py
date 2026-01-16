@@ -88,7 +88,7 @@ class QuickbaseBaseTest(BaseCase):
                 cls.PARENT_TAP_STREAM_ID: "tables",
                 cls.API_LIMIT: 100
             },
-            "get_reports": {
+            "reports": {
                 cls.PRIMARY_KEYS: { "id" },
                 cls.REPLICATION_METHOD: cls.FULL_TABLE,
                 cls.REPLICATION_KEYS: set(),
@@ -103,27 +103,11 @@ class QuickbaseBaseTest(BaseCase):
                 cls.OBEYS_START_DATE: False,
                 cls.API_LIMIT: 100
             },
-            "get_fields": {
-                cls.PRIMARY_KEYS: { "id" },
-                cls.REPLICATION_METHOD: cls.FULL_TABLE,
-                cls.REPLICATION_KEYS: set(),
-                cls.OBEYS_START_DATE: False,
-                cls.PARENT_TAP_STREAM_ID: "fields",
-                cls.API_LIMIT: 100
-            },
             "fields_usage": {
                 cls.PRIMARY_KEYS: { "tableId", "id" },
                 cls.REPLICATION_METHOD: cls.FULL_TABLE,
                 cls.REPLICATION_KEYS: set(),
                 cls.OBEYS_START_DATE: False,
-                cls.API_LIMIT: 100
-            },
-            "get_field_usage": {
-                cls.PRIMARY_KEYS: { "id" },
-                cls.REPLICATION_METHOD: cls.FULL_TABLE,
-                cls.REPLICATION_KEYS: set(),
-                cls.OBEYS_START_DATE: False,
-                cls.PARENT_TAP_STREAM_ID: "fields_usage",
                 cls.API_LIMIT: 100
             }
         }
