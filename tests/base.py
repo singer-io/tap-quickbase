@@ -89,7 +89,7 @@ class QuickbaseBaseTest(BaseCase):
                 cls.API_LIMIT: 100
             },
             "reports": {
-                cls.PRIMARY_KEYS: { "id" },
+                cls.PRIMARY_KEYS: { "id", "tableId" },
                 cls.REPLICATION_METHOD: cls.FULL_TABLE,
                 cls.REPLICATION_KEYS: set(),
                 cls.OBEYS_START_DATE: False,
