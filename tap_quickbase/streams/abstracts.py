@@ -171,12 +171,6 @@ class BaseStream(ABC):
         """
         # If API returns fewer records than requested, it's the last page
         if num_records < page_size:
-            LOGGER.info(
-                "Stream %s: Received %s records (less than page_size=%s). Last page.",
-                self.tap_stream_id,
-                num_records,
-                page_size
-            )
             return False, skip
 
         # If metadata available, use it to determine if more pages exist

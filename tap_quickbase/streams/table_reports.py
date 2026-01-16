@@ -11,7 +11,7 @@ class TableReports(FullTableStream):
     replication_keys = []
     path = "v1/reports?tableId={tableId}"
     parent = "app_tables"
-    children = ["get_reports"]
+    children = ["reports"]
 
     def modify_object(self, record, parent_record=None):
         """Add tableId from parent record to make composite primary key."""
