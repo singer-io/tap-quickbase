@@ -126,11 +126,11 @@ This tap:
 
     ```json
     {
-        "currently_syncing": "engage",
+        "currently_syncing": "tables",
         "bookmarks": {
-            "export": "2019-09-27T22:34:39.000000Z",
-            "funnels": "2019-09-28T15:30:26.000000Z",
-            "revenue": "2019-09-28T18:23:53Z"
+            "apps": "2023-01-15T10:30:00.000000Z",
+            "events": "2023-01-15T11:45:00.000000Z",
+            "tables": "2023-01-15T12:00:00.000000Z"
         }
     }
     ```
