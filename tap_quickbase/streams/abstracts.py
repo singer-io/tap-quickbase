@@ -406,7 +406,7 @@ class IncrementalStream(BaseStream):
             key or self.replication_keys[0],
             self.client.config["start_date"],
         )
-        value = max(current_bookmark, value)
+        value = max(str(current_bookmark), str(value))
         return write_bookmark(
             state, stream, key or self.replication_keys[0], value
         )
@@ -432,13 +432,13 @@ class IncrementalStream(BaseStream):
                 )
 
                 record_bookmark = transformed_record[self.replication_keys[0]]
-                if record_bookmark >= bookmark_date:
+                if str(record_bookmark) >= str(bookmark_date):
                     if self.is_selected():
                         write_record(self.tap_stream_id, transformed_record)
                         counter.increment()
 
                     current_max_bookmark_date = max(
-                        current_max_bookmark_date, record_bookmark
+                        str(current_max_bookmark_date), str(record_bookmark)
                     )
 
                     self.sync_child_streams(state, transformer, record)
@@ -576,8 +576,8 @@ class PseudoIncrementalStream(BaseStream):
                 record = self.modify_object(record, parent_obj)
 
                 # Get updated field from record
-                record_updated_str = record.get(self.bookmark_field)
-                if not record_updated_str:
+                record_updated_raw = record.get(self.bookmark_field)
+                if not record_updated_raw:
                     # Skip records without updated field
                     LOGGER.warning(
                         "Record in %s missing '%s' field, skipping",
@@ -585,13 +585,15 @@ class PseudoIncrementalStream(BaseStream):
                         self.bookmark_field
                     )
                     continue
+                
+                record_updated_str = str(record_updated_raw)
 
                 record_updated_dt = self._parse_datetime(record_updated_str)
                 if not record_updated_dt:
                     continue
 
                 # Filter: only process records updated after bookmark
-                if last_bookmark_dt and record_updated_dt <= last_bookmark_dt:
+                if last_bookmark_dt and record_updated_dt and record_updated_dt <= last_bookmark_dt:
                     continue
 
                 # Transform and emit record
@@ -604,7 +606,7 @@ class PseudoIncrementalStream(BaseStream):
                     counter.increment()
 
                 # Track max updated
-                if not max_updated_dt or record_updated_dt > max_updated_dt:
+                if not max_updated_dt or (record_updated_dt and record_updated_dt > max_updated_dt):
                     max_updated_dt = record_updated_dt
                     max_updated_str = record_updated_str
 
@@ -645,7 +647,7 @@ class ParentBaseStream(IncrementalStream):
                 state, child.tap_stream_id, key=bookmark_key
             )
             min_parent_bookmark = (
-                min(min_parent_bookmark, child_bookmark)
+                min(str(min_parent_bookmark), str(child_bookmark))
                 if min_parent_bookmark
                 else child_bookmark
             )
