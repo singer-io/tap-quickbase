@@ -13,11 +13,11 @@ setup(name="tap-quickbase",
       install_requires=[
         "singer-python==6.3.0",
         "requests==2.32.4",
-        "backoff==2.2.1"
+        "backoff==2.2.1",
+        "parameterized==0.9.0"
       ],
       extras_require={
         "dev": [
-          "parameterized",
           "pytest",
           "coverage"
         ]
