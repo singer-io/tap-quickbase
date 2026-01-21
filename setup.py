@@ -12,7 +12,7 @@ setup(name="tap-quickbase",
       py_modules=["tap_quickbase"],
       install_requires=[
         "singer-python==6.3.0",
-        "requests==2.32.4",
+        "requests==2.32.5",
         "backoff==2.2.1",
         "parameterized==0.9.0"
       ],
