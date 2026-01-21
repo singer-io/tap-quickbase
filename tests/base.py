@@ -1,13 +1,5 @@
-import copy
 import os
-import unittest
-from datetime import datetime as dt
-from datetime import timedelta
 
-import dateutil.parser
-import pytz
-from tap_tester import connections, menagerie, runner
-from tap_tester.logger import LOGGER
 from tap_tester.base_suite_tests.base_case import BaseCase
 
 
