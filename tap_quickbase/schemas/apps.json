@@ -1,0 +1,125 @@
+{
+    "type": "object",
+    "properties": {
+        "ancestorId": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "created": {
+            "type": [
+                "null",
+                "string"
+            ],
+            "format": "date-time"
+        },
+        "dateFormat": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "description": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "hasEveryoneOnTheInternet": {
+            "type": [
+                "null",
+                "boolean"
+            ]
+        },
+        "memoryInfo": {
+            "type": "object",
+            "properties": {
+                "estMemory": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                },
+                "estMemoryInclDependentApps": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                }
+            }
+        },
+        "id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "name": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "securityProperties": {
+            "type": "object",
+            "properties": {
+                "allowClone": {
+                    "type": [
+                        "null",
+                        "boolean"
+                    ]
+                },
+                "allowExport": {
+                    "type": [
+                        "null",
+                        "boolean"
+                    ]
+                },
+                "enableAppTokens": {
+                    "type": [
+                        "null",
+                        "boolean"
+                    ]
+                },
+                "hideFromPublic": {
+                    "type": [
+                        "null",
+                        "boolean"
+                    ]
+                },
+                "mustBeRealmApproved": {
+                    "type": [
+                        "null",
+                        "boolean"
+                    ]
+                },
+                "useIPFilter": {
+                    "type": [
+                        "null",
+                        "boolean"
+                    ]
+                }
+            }
+        },
+        "timeZone": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "updated": {
+            "type": [
+                "null",
+                "string"
+            ],
+            "format": "date-time"
+        },
+        "dataClassification": {
+            "type": [
+                "null",
+                "string"
+            ]
+        }
+    }
+}

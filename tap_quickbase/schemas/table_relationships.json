@@ -1,0 +1,116 @@
+{
+    "type": "object",
+    "properties": {
+        "tableId": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "childTableId": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "foreignKeyField": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                },
+                "label": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "type": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                }
+            }
+        },
+        "id": {
+            "type": [
+                "null",
+                "integer"
+            ]
+        },
+        "isCrossApp": {
+            "type": [
+                "null",
+                "boolean"
+            ]
+        },
+        "lookupFields": {
+            "type": [
+                "null",
+                "array"
+            ],
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": [
+                            "null",
+                            "integer"
+                        ]
+                    },
+                    "label": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "type": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    }
+                }
+            }
+        },
+        "parentTableId": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "summaryFields": {
+            "type": [
+                "null",
+                "array"
+            ],
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": [
+                            "null",
+                            "integer"
+                        ]
+                    },
+                    "label": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "type": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}

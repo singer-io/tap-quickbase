@@ -1,0 +1,213 @@
+{
+    "type": "object",
+    "properties": {
+        "tableId": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "description": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "incomplete": {
+            "type": [
+                "null",
+                "boolean"
+            ]
+        },
+        "name": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "properties": {
+            "type": "object",
+            "properties": {
+                "barDataSources": {
+                    "type": [
+                        "null",
+                        "array"
+                    ],
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "aggregation": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "fieldId": {
+                                "type": [
+                                    "null",
+                                    "integer"
+                                ]
+                            },
+                            "type": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "barLabel": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "categories": {
+                    "type": "object",
+                    "properties": {
+                        "fieldId": {
+                            "type": [
+                                "null",
+                                "integer"
+                            ]
+                        },
+                        "grouping": {
+                            "type": [
+                                "null",
+                                "string"
+                            ]
+                        },
+                        "label": {
+                            "type": [
+                                "null",
+                                "string"
+                            ]
+                        },
+                        "order": {
+                            "type": [
+                                "null",
+                                "string"
+                            ]
+                        }
+                    }
+                },
+                "chartType": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "lineDataSources": {
+                    "type": [
+                        "null",
+                        "array"
+                    ],
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "aggregation": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "fieldId": {
+                                "type": [
+                                    "null",
+                                    "integer"
+                                ]
+                            },
+                            "type": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "lineLabel": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "sortBy": {
+                    "type": [
+                        "null",
+                        "array"
+                    ],
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "by": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "order": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "query": {
+            "type": "object",
+            "properties": {
+                "filter": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "formulaFields": {
+                    "type": [
+                        "null",
+                        "array"
+                    ],
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "tableId": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                }
+            }
+        },
+        "type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "usedCount": {
+            "type": [
+                "null",
+                "integer"
+            ]
+        },
+        "usedLast": {
+            "type": [
+                "null",
+                "string"
+            ],
+            "format": "date-time"
+        }
+    }
+}
