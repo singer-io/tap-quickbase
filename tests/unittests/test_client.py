@@ -33,13 +33,13 @@ class TestClientInitialization(unittest.TestCase):
     @patch("tap_quickbase.client.session")
     def test_request_timeout_initialization(self, name, extra_config, expected, mock_session):
         """Test request timeout handles various input types."""
-        config = {"access_token": "token", **extra_config}
+        config = {"qb_user_token": "token", **extra_config}
         client = Client(config)
         self.assertEqual(client.request_timeout, expected)
 
     def test_base_url_initialization(self):
         """Test base URL is set correctly."""
-        config = {"access_token": "token"}
+        config = {"qb_user_token": "token"}
         client = Client(config)
         self.assertEqual(client.base_url, "https://api.quickbase.com")
 
@@ -50,8 +50,8 @@ class TestAuthentication(unittest.TestCase):
     def setUp(self):
         """Common setup."""
         self.config = {
-            "access_token": "test_token",
-            "realm_hostname": "mycompany.quickbase.com"
+            "qb_user_token": "test_token",
+            "qb_url": "https://mycompany.quickbase.com/db/"
         }
         self.client = Client(self.config)
 
@@ -65,7 +65,7 @@ class TestAuthentication(unittest.TestCase):
 
     def test_authenticate_uses_default_realm(self):
         """Test default realm hostname when not provided."""
-        config = {"access_token": "token"}
+        config = {"qb_user_token": "token"}
         client = Client(config)
         headers, _ = client.authenticate({}, {})
         
@@ -87,7 +87,7 @@ class TestRequestHandling(unittest.TestCase):
 
     def setUp(self):
         """Common setup."""
-        self.config = {"access_token": "token"}
+        self.config = {"qb_user_token": "token"}
         self.client = Client(self.config)
 
     def test_get_request_removes_json_body(self):
@@ -122,7 +122,7 @@ class TestErrorHandling(unittest.TestCase):
 
     def setUp(self):
         """Common setup."""
-        self.config = {"access_token": "token"}
+        self.config = {"qb_user_token": "token"}
         self.client = Client(self.config)
 
     @parameterized.expand([
@@ -152,7 +152,7 @@ class TestBackoffAndRetry(unittest.TestCase):
 
     def setUp(self):
         """Common setup."""
-        self.config = {"access_token": "token"}
+        self.config = {"qb_user_token": "token"}
         self.client = Client(self.config)
 
     @parameterized.expand([

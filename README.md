@@ -104,18 +104,18 @@ This tap:
     - [target-stitch](https://github.com/singer-io/target-stitch)
 
 3. Create your tap's `config.json` file.  The tap config file for this tap should include these entries:
-   - `access_token` (string, required): Quickbase API authentication token
-   - `realm_hostname` (string, required): Quickbase realm hostname (e.g., `your-realm.quickbase.com`)
-   - `app_id` (string, required): Quickbase application ID
+   - `qb_user_token` (string, required): Quickbase API authentication token
+   - `qb_url` (string, required): Quickbase URL including protocol and /db/ path (e.g., `https://your-realm.quickbase.com/db/`)
+   - `qb_appid` (string, required): Quickbase application ID
    - `start_date` (string, required): The default value to use if no bookmark exists for an endpoint (rfc3339 date string)
    - `page_size` (integer, optional): Number of records to fetch per page. Default is 100.
    - `request_timeout` (integer, optional): Max time for which request should wait to get a response. Default is 300 seconds.
 
     ```json
     {
-        "access_token": "your_quickbase_access_token",
-        "realm_hostname": "your-realm.quickbase.com",
-        "app_id": "your_app_id",
+        "qb_user_token": "your_quickbase_user_token",
+        "qb_url": "https://your-realm.quickbase.com/db/",
+        "qb_appid": "your_app_id",
         "start_date": "2023-01-01T00:00:00Z",
         "page_size": 100,
         "request_timeout": 300
