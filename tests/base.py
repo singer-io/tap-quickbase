@@ -109,9 +109,9 @@ class QuickbaseBaseTest(BaseCase):
         """Authentication information for the test account."""
         credentials_dict = {}
         creds = {
-            'access_token': 'TAP_QUICKBASE_ACCESS_TOKEN',
-            'realm_hostname': 'TAP_QUICKBASE_REALM_HOSTNAME',
-            'app_id': 'TAP_QUICKBASE_APP_ID'
+            'qb_user_token': 'TAP_QUICKBASE_ACCESS_TOKEN',
+            'qb_url': 'TAP_QUICKBASE_REALM_HOSTNAME',
+            'qb_appid': 'TAP_QUICKBASE_APP_ID'
         }
 
         for cred in creds:

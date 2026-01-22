@@ -345,7 +345,7 @@ class BaseStream(ABC):
 
         formatted_path = self.path
         replacements = {
-            '{appId}': str(self.client.config.get('app_id', parent_obj.get('id', ''))),
+            '{appId}': str(self.client.config.get('qb_appid', parent_obj.get('id', ''))),
             '{tableId}': self._get_table_id(parent_obj),
             '{fieldId}': str(parent_obj.get('id', '')),
             '{reportId}': str(parent_obj.get('id', ''))

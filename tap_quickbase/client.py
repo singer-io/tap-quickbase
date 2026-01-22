@@ -82,11 +82,11 @@ class Client:
 
     def authenticate(self, headers: Dict, params: Dict) -> Tuple[Dict, Dict]:
         """Authenticates the request with the token"""
-        headers["Authorization"] = f"QB-USER-TOKEN {self.config['access_token']}"
+        headers["Authorization"] = f"QB-USER-TOKEN {self.config['qb_user_token']}"
         # QB-Realm-Hostname is required for QuickBase API requests
-        headers["QB-Realm-Hostname"] = self.config.get(
-            "realm_hostname", "api.quickbase.com"
-        )
+        qb_url = self.config.get('qb_url', '')
+        hostname = qb_url.replace('https://', '').replace('http://', '').split('/')[0] if qb_url else 'api.quickbase.com'
+        headers["QB-Realm-Hostname"] = hostname
         headers["User-Agent"] = "tap-quickbase/1.0.0"
         return headers, params
 

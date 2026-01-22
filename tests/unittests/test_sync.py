@@ -86,7 +86,7 @@ class TestSync(unittest.TestCase):
         mock_streams.__getitem__ = MagicMock(return_value=mock_stream_class)
 
         client = MagicMock()
-        client.config = {'app_id': 'test_app_id', 'start_date': '2024-01-01T00:00:00Z'}
+        client.config = {'qb_appid': 'test_app_id', 'start_date': '2024-01-01T00:00:00Z'}
         config = {}
 
         sync(client, config, mock_catalog, state)
@@ -138,7 +138,7 @@ class TestSync(unittest.TestCase):
         mock_streams.__getitem__ = MagicMock(side_effect=get_stream_class)
 
         client = MagicMock()
-        client.config = {'app_id': 'test_app_id', 'start_date': '2024-01-01T00:00:00Z'}
+        client.config = {'qb_appid': 'test_app_id', 'start_date': '2024-01-01T00:00:00Z'}
         config = {}
 
         sync(client, config, mock_catalog, state)

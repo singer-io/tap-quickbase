@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 
 setup(name="tap-quickbase",
-      version="3.0.0",
+      version="2.1.0",
       description="Singer.io tap for extracting data from Quickbase API",
       author="Stitch",
       url="http://singer.io",

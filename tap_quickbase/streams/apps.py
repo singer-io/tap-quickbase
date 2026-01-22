@@ -15,8 +15,8 @@ class Apps(PseudoIncrementalStream):
 
     def get_url_endpoint(self, parent_obj=None):
         """Get app by ID from config"""
-        app_id = self.client.config.get('app_id')
-        if not app_id:
-            raise ValueError("app_id is required in config to sync apps")
-        path = self.path.replace('{appId}', app_id)
+        qb_appid = self.client.config.get('qb_appid')
+        if not qb_appid:
+            raise ValueError("qb_appid is required in config to sync apps")
+        path = self.path.replace('{appId}', qb_appid)
         return f"{self.client.base_url}/{path}"

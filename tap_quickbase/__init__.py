@@ -9,7 +9,7 @@ from tap_quickbase.sync import sync
 
 LOGGER = singer.get_logger()
 
-REQUIRED_CONFIG_KEYS = ['access_token', 'app_id', 'realm_hostname', 'start_date']
+REQUIRED_CONFIG_KEYS = ['qb_user_token', 'qb_appid', 'qb_url', 'start_date']
 
 
 def do_discover():
