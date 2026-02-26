@@ -23,6 +23,27 @@ LOGGER = get_logger()
 REQUEST_TIMEOUT = 300
 
 
+def _log_backoff(details):
+    """Log a message when a request is retried due to a backoff event."""
+    LOGGER.warning(
+        "Backing off %.1f seconds after %d tries calling %s due to %s",
+        details.get("wait"),
+        details.get("tries"),
+        details.get("target", ""),
+        details.get("exception", ""),
+    )
+
+
+def _log_giveup(details):
+    """Log a message when all retries are exhausted."""
+    LOGGER.error(
+        "Giving up after %d tries calling %s due to %s",
+        details.get("tries"),
+        details.get("target", ""),
+        details.get("exception", ""),
+    )
+
+
 def raise_for_error(response: requests.Response) -> None:
     """Raises the associated response exception. Takes in a response object,
     checks the status code, and throws the associated exception based on the
@@ -49,8 +70,15 @@ def raise_for_error(response: requests.Response) -> None:
                 f"Error: {response_json.get('message', error_message)}"
             )
         exc = ERROR_CODE_EXCEPTION_MAPPING.get(response.status_code, {}).get(
-            "raise_exception", QuickbaseError
+            "raise_exception"
         )
+        # For unmapped 5xx errors, default to QuickbaseBackoffError so they are retried
+        if exc is None:
+            exc = (
+                QuickbaseBackoffError
+                if 500 <= response.status_code < 600
+                else QuickbaseError
+            )
         raise exc(message, response) from None
 
 class Client:
@@ -126,6 +154,8 @@ class Client:
         ),
         max_tries=5,
         factor=2,
+        on_backoff=_log_backoff,
+        on_giveup=_log_giveup,
     )
     def __make_request(
         self, method: str, endpoint: str, **kwargs

@@ -58,6 +58,10 @@ class QuickbaseServiceUnavailableError(QuickbaseBackoffError):
     """class representing 503 status code."""
 
 
+class QuickbaseGatewayTimeoutError(QuickbaseBackoffError):
+    """class representing 504 status code."""
+
+
 ERROR_CODE_EXCEPTION_MAPPING = {
     400: {
         "raise_exception": QuickbaseBadRequestError,
@@ -117,5 +121,12 @@ ERROR_CODE_EXCEPTION_MAPPING = {
     503: {
         "raise_exception": QuickbaseServiceUnavailableError,
         "message": "API service is currently unavailable."
+    },
+    504: {
+        "raise_exception": QuickbaseGatewayTimeoutError,
+        "message": (
+            "The server, while acting as a gateway, did not receive a timely "
+            "response from the upstream server."
+        ),
     }
 }

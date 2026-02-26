@@ -16,7 +16,9 @@ from tap_quickbase.exceptions import (
     QuickbaseInternalServerError,
     QuickbaseNotImplementedError,
     QuickbaseBadGatewayError,
-    QuickbaseServiceUnavailableError
+    QuickbaseServiceUnavailableError,
+    QuickbaseGatewayTimeoutError,
+    QuickbaseBackoffError
 )
 
 
@@ -162,6 +164,7 @@ class TestBackoffAndRetry(unittest.TestCase):
         ["501", 501, QuickbaseNotImplementedError],
         ["502", 502, QuickbaseBadGatewayError],
         ["503", 503, QuickbaseServiceUnavailableError],
+        ["504", 504, QuickbaseGatewayTimeoutError],
     ])
     @patch("time.sleep")
     def test_retriable_http_errors_retry(self, name, status_code, exception_class, mock_sleep):
@@ -180,6 +183,29 @@ class TestBackoffAndRetry(unittest.TestCase):
             self.assertTrue(mock_sleep.call_count >= 4)
 
     @parameterized.expand([
+        ["505", 505],
+        ["506", 506],
+        ["507", 507],
+        ["508", 508],
+        ["510", 510],
+        ["511", 511],
+        ["599", 599],
+    ])
+    @patch("time.sleep")
+    def test_unmapped_5xx_errors_retry(self, name, status_code, mock_sleep):
+        """Test unmapped 5xx status codes fall back to QuickbaseBackoffError and retry."""
+        mock_response = MagicMock()
+        mock_response.status_code = status_code
+        mock_response.json.return_value = {}
+
+        with patch.object(self.client._session, "request", return_value=mock_response) as mock_request:
+            with self.assertRaises(QuickbaseBackoffError):
+                self.client._Client__make_request("GET", "https://api.quickbase.com/test")
+
+            # Should retry 5 times
+            self.assertEqual(mock_request.call_count, 5)
+
+    @parameterized.expand([
         ["connection_reset", ConnectionResetError],
         ["connection_error", ConnectionError],
         ["chunked_encoding", ChunkedEncodingError],
@@ -194,6 +220,48 @@ class TestBackoffAndRetry(unittest.TestCase):
             
             # Should retry 5 times
             self.assertEqual(mock_request.call_count, 5)
+
+    @patch("time.sleep")
+    def test_backoff_logging_on_retry(self, mock_sleep):
+        """Test that backoff logging is triggered on retry."""
+        mock_response_error = MagicMock()
+        mock_response_error.status_code = 500
+        mock_response_error.json.return_value = {}
+
+        mock_response_success = MagicMock()
+        mock_response_success.status_code = 200
+        mock_response_success.json.return_value = {"data": "success"}
+
+        with patch.object(
+            self.client._session,
+            "request",
+            side_effect=[mock_response_error, mock_response_success]
+        ):
+            with patch("tap_quickbase.client.LOGGER") as mock_logger:
+                result = self.client._Client__make_request("GET", "https://api.quickbase.com/test")
+
+                self.assertEqual(result, {"data": "success"})
+                # on_backoff should have logged a warning
+                mock_logger.warning.assert_called()
+
+    @patch("time.sleep")
+    def test_giveup_logging_on_exhaustion(self, mock_sleep):
+        """Test that giveup logging is triggered when retries are exhausted."""
+        mock_response = MagicMock()
+        mock_response.status_code = 504
+        mock_response.json.return_value = {}
+
+        with patch.object(
+            self.client._session,
+            "request",
+            return_value=mock_response
+        ):
+            with patch("tap_quickbase.client.LOGGER") as mock_logger:
+                with self.assertRaises(QuickbaseGatewayTimeoutError):
+                    self.client._Client__make_request("GET", "https://api.quickbase.com/test")
+
+                # on_giveup should have logged an error
+                mock_logger.error.assert_called()
 
     @patch("time.sleep")
     def test_success_after_retry(self, mock_sleep):
