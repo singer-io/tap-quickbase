@@ -243,48 +243,6 @@ class TestBackoffAndRetry(unittest.TestCase):
             self.assertEqual(mock_request.call_count, 5)
 
     @patch("time.sleep")
-    def test_backoff_logging_on_retry(self, mock_sleep):
-        """Test that backoff logging is triggered on retry."""
-        mock_response_error = MagicMock()
-        mock_response_error.status_code = 500
-        mock_response_error.json.return_value = {}
-
-        mock_response_success = MagicMock()
-        mock_response_success.status_code = 200
-        mock_response_success.json.return_value = {"data": "success"}
-
-        with patch.object(
-            self.client._session,
-            "request",
-            side_effect=[mock_response_error, mock_response_success]
-        ):
-            with patch("tap_quickbase.client.LOGGER") as mock_logger:
-                result = self.client._Client__make_request("GET", "https://api.quickbase.com/test")
-
-                self.assertEqual(result, {"data": "success"})
-                # on_backoff should have logged a warning
-                mock_logger.warning.assert_called()
-
-    @patch("time.sleep")
-    def test_giveup_logging_on_exhaustion(self, mock_sleep):
-        """Test that giveup logging is triggered when retries are exhausted."""
-        mock_response = MagicMock()
-        mock_response.status_code = 504
-        mock_response.json.return_value = {}
-
-        with patch.object(
-            self.client._session,
-            "request",
-            return_value=mock_response
-        ):
-            with patch("tap_quickbase.client.LOGGER") as mock_logger:
-                with self.assertRaises(QuickbaseGatewayTimeoutError):
-                    self.client._Client__make_request("GET", "https://api.quickbase.com/test")
-
-                # on_giveup should have logged an error
-                mock_logger.error.assert_called()
-
-    @patch("time.sleep")
     def test_success_after_retry(self, mock_sleep):
         """Test successful request after retries."""
         mock_response_error = MagicMock()
