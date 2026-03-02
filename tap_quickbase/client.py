@@ -25,21 +25,25 @@ REQUEST_TIMEOUT = 300
 
 def _log_backoff(details):
     """Log a message when a request is retried due to a backoff event."""
+    target = details.get("target")
+    target_name = getattr(target, "__qualname__", None) or str(target)
     LOGGER.warning(
         "Backing off %.1f seconds after %d tries calling %s due to %s",
         details.get("wait"),
         details.get("tries"),
-        details.get("target", ""),
+        target_name,
         details.get("exception", ""),
     )
 
 
 def _log_giveup(details):
     """Log a message when all retries are exhausted."""
+    target = details.get("target")
+    target_name = getattr(target, "__qualname__", None) or str(target)
     LOGGER.error(
         "Giving up after %d tries calling %s due to %s",
         details.get("tries"),
-        details.get("target", ""),
+        target_name,
         details.get("exception", ""),
     )
 
@@ -53,7 +57,7 @@ def raise_for_error(response: requests.Response) -> None:
     """
     try:
         response_json = response.json()
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, ValueError):
         response_json = {}
     if response.status_code not in [200, 201, 204]:
         if response_json.get("error"):
