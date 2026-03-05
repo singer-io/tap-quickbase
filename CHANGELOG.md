@@ -1,9 +1,7 @@
 # Changelog
 
 ## 2.2.0
-  * Handle all 5xx errors with common `QuickbaseBackoffError` and exponential backoff retry instead of individual exception classes per status code
-  * Unmapped non-5xx errors raise `QuickbaseError` without retry
-  * Consolidate 5xx test cases into a single parameterized test
+  * Improved 5xx errors with common `QuickbaseBackoffError` and exponential backoff retry instead of individual exception classes per status code [37](https://github.com/singer-io/tap-quickbase/pull/37)
 
 ## 2.1.0
   * Complete rewrite using streams-based architecture [#29](https://github.com/singer-io/tap-quickbase/pull/29)
