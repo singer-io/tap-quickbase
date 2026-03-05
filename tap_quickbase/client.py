@@ -32,7 +32,7 @@ def raise_for_error(response: requests.Response) -> None:
     """
     try:
         response_json = response.json()
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, ValueError):
         response_json = {}
     if response.status_code not in [200, 201, 204]:
         if response_json.get("error"):
@@ -49,8 +49,15 @@ def raise_for_error(response: requests.Response) -> None:
                 f"Error: {response_json.get('message', error_message)}"
             )
         exc = ERROR_CODE_EXCEPTION_MAPPING.get(response.status_code, {}).get(
-            "raise_exception", QuickbaseError
+            "raise_exception"
         )
+        # For unmapped 5xx errors, default to QuickbaseBackoffError so they are retried
+        if exc is None:
+            exc = (
+                QuickbaseBackoffError
+                if 500 <= response.status_code < 600
+                else QuickbaseError
+            )
         raise exc(message, response) from None
 
 class Client:
