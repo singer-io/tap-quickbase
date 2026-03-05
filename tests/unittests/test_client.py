@@ -13,11 +13,6 @@ from tap_quickbase.exceptions import (
     QuickbaseConflictError,
     QuickbaseUnprocessableEntityError,
     QuickbaseRateLimitError,
-    QuickbaseInternalServerError,
-    QuickbaseNotImplementedError,
-    QuickbaseBadGatewayError,
-    QuickbaseServiceUnavailableError,
-    QuickbaseGatewayTimeoutError,
     QuickbaseBackoffError,
     QuickbaseError
 )
@@ -181,11 +176,6 @@ class TestBackoffAndRetry(unittest.TestCase):
     @parameterized.expand([
         ["422", 422, QuickbaseUnprocessableEntityError],
         ["429", 429, QuickbaseRateLimitError],
-        ["500", 500, QuickbaseInternalServerError],
-        ["501", 501, QuickbaseNotImplementedError],
-        ["502", 502, QuickbaseBadGatewayError],
-        ["503", 503, QuickbaseServiceUnavailableError],
-        ["504", 504, QuickbaseGatewayTimeoutError],
     ])
     @patch("time.sleep")
     def test_retriable_http_errors_retry(self, name, status_code, exception_class, mock_sleep):
@@ -204,6 +194,11 @@ class TestBackoffAndRetry(unittest.TestCase):
             self.assertTrue(mock_sleep.call_count >= 4)
 
     @parameterized.expand([
+        ["500", 500],
+        ["501", 501],
+        ["502", 502],
+        ["503", 503],
+        ["504", 504],
         ["505", 505],
         ["506", 506],
         ["507", 507],
@@ -213,8 +208,8 @@ class TestBackoffAndRetry(unittest.TestCase):
         ["599", 599],
     ])
     @patch("time.sleep")
-    def test_unmapped_5xx_errors_retry(self, name, status_code, mock_sleep):
-        """Test unmapped 5xx status codes fall back to QuickbaseBackoffError and retry."""
+    def test_5xx_errors_retry(self, name, status_code, mock_sleep):
+        """Test all 5xx status codes raise QuickbaseBackoffError and retry."""
         mock_response = MagicMock()
         mock_response.status_code = status_code
         mock_response.json.return_value = {}

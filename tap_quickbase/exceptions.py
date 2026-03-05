@@ -42,26 +42,6 @@ class QuickbaseRateLimitError(QuickbaseBackoffError):
     """class representing 429 status code."""
 
 
-class QuickbaseInternalServerError(QuickbaseBackoffError):
-    """class representing 500 status code."""
-
-
-class QuickbaseNotImplementedError(QuickbaseBackoffError):
-    """class representing 501 status code."""
-
-
-class QuickbaseBadGatewayError(QuickbaseBackoffError):
-    """class representing 502 status code."""
-
-
-class QuickbaseServiceUnavailableError(QuickbaseBackoffError):
-    """class representing 503 status code."""
-
-
-class QuickbaseGatewayTimeoutError(QuickbaseBackoffError):
-    """class representing 504 status code."""
-
-
 ERROR_CODE_EXCEPTION_MAPPING = {
     400: {
         "raise_exception": QuickbaseBadRequestError,
@@ -98,35 +78,6 @@ ERROR_CODE_EXCEPTION_MAPPING = {
         "message": (
             "The API rate limit for your organisation/application pairing has been "
             "exceeded."
-        ),
-    },
-    500: {
-        "raise_exception": QuickbaseInternalServerError,
-        "message": (
-            "The server encountered an unexpected condition which prevented "
-            "it from fulfilling the request."
-        ),
-    },
-    501: {
-        "raise_exception": QuickbaseNotImplementedError,
-        "message": (
-            "The server does not support the functionality required to fulfill "
-            "the request."
-        ),
-    },
-    502: {
-        "raise_exception": QuickbaseBadGatewayError,
-        "message": "Server received an invalid response."
-    },
-    503: {
-        "raise_exception": QuickbaseServiceUnavailableError,
-        "message": "API service is currently unavailable."
-    },
-    504: {
-        "raise_exception": QuickbaseGatewayTimeoutError,
-        "message": (
-            "The server, while acting as a gateway, did not receive a timely "
-            "response from the upstream server."
         ),
     }
 }
