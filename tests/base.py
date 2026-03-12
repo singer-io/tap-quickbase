@@ -101,7 +101,54 @@ class QuickbaseBaseTest(BaseCase):
                 cls.REPLICATION_KEYS: set(),
                 cls.OBEYS_START_DATE: False,
                 cls.API_LIMIT: 100
-            }
+            },
+            # ----------------------------------------------------------------
+            # Dynamic streams – discovered at runtime from the QB application.
+            # Primary key = record_id (QB field 3, "Record ID#" → sanitized).
+            # Replication key = date_modified (QB field 2) → INCREMENTAL.
+            # ----------------------------------------------------------------
+            "_dbid_connectors__connectors": {
+                cls.PRIMARY_KEYS: {"record_id"},
+                cls.REPLICATION_METHOD: cls.INCREMENTAL,
+                cls.REPLICATION_KEYS: {"date_modified"},
+                cls.OBEYS_START_DATE: True,
+                cls.API_LIMIT: 10
+            },
+            "_dbid_connector_versions__connector_versions": {
+                cls.PRIMARY_KEYS: {"record_id"},
+                cls.REPLICATION_METHOD: cls.INCREMENTAL,
+                cls.REPLICATION_KEYS: {"date_modified"},
+                cls.OBEYS_START_DATE: True,
+                cls.API_LIMIT: 10
+            },
+            "_dbid_connector_logs__connector_logs": {
+                cls.PRIMARY_KEYS: {"record_id"},
+                cls.REPLICATION_METHOD: cls.INCREMENTAL,
+                cls.REPLICATION_KEYS: {"date_modified"},
+                cls.OBEYS_START_DATE: True,
+                cls.API_LIMIT: 10
+            },
+            "_dbid_connector_performance__connector_performance": {
+                cls.PRIMARY_KEYS: {"record_id"},
+                cls.REPLICATION_METHOD: cls.INCREMENTAL,
+                cls.REPLICATION_KEYS: {"date_modified"},
+                cls.OBEYS_START_DATE: True,
+                cls.API_LIMIT: 10
+            },
+            "_dbid_connector_performance_alerts__connector_performance_alerts": {
+                cls.PRIMARY_KEYS: {"record_id"},
+                cls.REPLICATION_METHOD: cls.INCREMENTAL,
+                cls.REPLICATION_KEYS: {"date_modified"},
+                cls.OBEYS_START_DATE: True,
+                cls.API_LIMIT: 10
+            },
+            "_dbid_connector_log_attachments__connector_log_attachments": {
+                cls.PRIMARY_KEYS: {"record_id"},
+                cls.REPLICATION_METHOD: cls.INCREMENTAL,
+                cls.REPLICATION_KEYS: {"date_modified"},
+                cls.OBEYS_START_DATE: True,
+                cls.API_LIMIT: 10
+            },
         }
 
     @staticmethod
