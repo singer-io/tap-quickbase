@@ -23,7 +23,15 @@ class QuickbasePaginationTest(PaginationTest, QuickbaseBaseTest):
             'events',
             'reports',
         }
-        return self.expected_stream_names().difference(streams_to_exclude)
+        # Also exclude dynamically-discovered app-data streams (prefixed with _dbid_).
+        # Their record counts depend on live customer data and cannot be guaranteed
+        # to exceed the page limit, making them unsuitable for a deterministic
+        # pagination test.
+        return {
+            name for name in self.expected_stream_names()
+            if name not in streams_to_exclude
+            and not name.startswith('_dbid_')
+        }
 
     def get_properties(self, original: bool = True):
         """Configuration with reduced page_size to test pagination logic."""
