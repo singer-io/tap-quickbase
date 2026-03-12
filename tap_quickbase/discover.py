@@ -53,16 +53,15 @@ def discover(client: Optional[object] = None) -> Catalog:
             )
         )
 
+    total = len(catalog.streams)
+    n_dynamic = sum(
+        1 for s in catalog.streams
+        if metadata.to_map(s.metadata).get((), {}).get("tap-quickbase.is_dynamic")
+    )
     LOGGER.info(
         "discover: catalog contains %s streams (%s static, %s dynamic)",
-        len(catalog.streams),
-        sum(
-            1 for s in catalog.streams
-            if not metadata.to_map(s.metadata).get((), {}).get("tap-quickbase.is_dynamic")
-        ),
-        sum(
-            1 for s in catalog.streams
-            if metadata.to_map(s.metadata).get((), {}).get("tap-quickbase.is_dynamic")
-        ),
+        total,
+        total - n_dynamic,
+        n_dynamic,
     )
     return catalog

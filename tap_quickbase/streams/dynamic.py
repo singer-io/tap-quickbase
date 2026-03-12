@@ -52,11 +52,13 @@ from singer import (
     write_state,
 )
 
-from tap_quickbase.streams.abstracts import BaseStream
+from tap_quickbase.streams.abstracts import (
+    BaseStream,
+    DEFAULT_PAGE_SIZE,
+    MAX_PAGINATION_ITERATIONS,
+)
 
 LOGGER = get_logger()
-DEFAULT_PAGE_SIZE = 100
-MAX_ITERATIONS = 10_000  # safety limit
 
 
 class DynamicTableStream(BaseStream):  # pylint: disable=too-many-instance-attributes
@@ -138,6 +140,7 @@ class DynamicTableStream(BaseStream):  # pylint: disable=too-many-instance-attri
     # Bookmark helpers                                                     #
     # ------------------------------------------------------------------ #
 
+    @property
     def _replication_key(self) -> Optional[str]:
         return self.replication_keys[0] if self.replication_keys else None
 
@@ -146,7 +149,7 @@ class DynamicTableStream(BaseStream):  # pylint: disable=too-many-instance-attri
 
     def get_bookmark(self, state: Dict, stream: str, key: Any = None) -> str:
         """Return the current bookmark (or start_date) for this stream."""
-        repl_key = key or self._replication_key() or "date_modified"
+        repl_key = key or self._replication_key or "date_modified"
         return get_bookmark(state, stream, repl_key, self._start_date())
 
     def write_bookmark(
@@ -155,7 +158,7 @@ class DynamicTableStream(BaseStream):  # pylint: disable=too-many-instance-attri
         """Advance the bookmark if *value* is greater than the current value."""
         if not value:
             return state
-        repl_key = key or self._replication_key() or "date_modified"
+        repl_key = key or self._replication_key or "date_modified"
         current = get_bookmark(state, stream, repl_key, self._start_date())
         value = max(current, value) if current else value
         return write_bookmark(state, stream, repl_key, value)
@@ -208,7 +211,7 @@ class DynamicTableStream(BaseStream):  # pylint: disable=too-many-instance-attri
         iterations = 0
         endpoint = f"{self.client.base_url}/v1/records/query"
 
-        while iterations < MAX_ITERATIONS:
+        while iterations < MAX_PAGINATION_ITERATIONS:
             iterations += 1
             body = self._build_query_body(skip, page_size)
 
@@ -254,10 +257,10 @@ class DynamicTableStream(BaseStream):  # pylint: disable=too-many-instance-attri
                 )
                 break
 
-        if iterations >= MAX_ITERATIONS:
+        if iterations >= MAX_PAGINATION_ITERATIONS:
             LOGGER.error(
-                "DynamicTableStream '%s': hit MAX_ITERATIONS=%s – possible infinite loop",
-                self.tap_stream_id, MAX_ITERATIONS
+                "DynamicTableStream '%s': hit MAX_PAGINATION_ITERATIONS=%s – possible infinite loop",
+                self.tap_stream_id, MAX_PAGINATION_ITERATIONS
             )
 
     # ------------------------------------------------------------------ #
@@ -275,7 +278,7 @@ class DynamicTableStream(BaseStream):  # pylint: disable=too-many-instance-attri
         Returns:
             Total number of records emitted.
         """
-        repl_key = self._replication_key()
+        repl_key = self._replication_key
         is_incremental = bool(repl_key and self.date_modified_field_id)
 
         # Determine starting bookmark

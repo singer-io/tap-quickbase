@@ -243,8 +243,13 @@ class TestBuildMetadataForDynamicStream(unittest.TestCase):
 # discover_dynamic_streams
 # ---------------------------------------------------------------------------
 
-def _make_client(tables=None, fields_by_table=None):
-    """Return a mock client with pre-configured API responses."""
+def _make_client(tables=None, fields_by_table=None, app_name="myapp"):
+    """Return a mock client with pre-configured API responses.
+
+    Args:
+        app_name: Value returned by ``GET /v1/apps/{id}`` as ``response["name"]``.
+            Defaults to ``"myapp"`` so stream names are prefixed ``myapp__*``.
+    """
     tables = tables or []
     fields_by_table = fields_by_table or {}
 
@@ -253,6 +258,10 @@ def _make_client(tables=None, fields_by_table=None):
     client.config = {"qb_appid": "app123", "start_date": "2023-01-01T00:00:00Z"}
 
     def make_request_side_effect(method, endpoint, params=None, **_kwargs):
+        # App name lookup: GET /v1/apps/{appId}  (must come before "tables" check
+        # because "/v1/tables" does not contain "/apps/" but guard anyway).
+        if "/apps/" in endpoint and "tables" not in endpoint:
+            return {"name": app_name, "id": "app123"}
         if "tables" in endpoint:
             return tables
         if "fields" in endpoint:

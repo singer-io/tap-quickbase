@@ -14,6 +14,7 @@ Discovery flow:
 """
 
 import re
+from collections import Counter
 from typing import Any, Dict, List, Optional, Tuple
 
 import singer
@@ -122,11 +123,11 @@ def build_schema_from_fields(
         - ``key_properties``   – list with the sanitized name of field-ID 3 (or
                                   the first field as a fallback)
     """
-    # First pass: resolve duplicate sanitized names
-    name_counts: Dict[str, int] = {}
-    for field in fields:
-        raw = sanitize_field_name(field.get("label", f"field_{field.get('id', 0)}"))
-        name_counts[raw] = name_counts.get(raw, 0) + 1
+    # First pass: count occurrences of each sanitized name to detect duplicates.
+    # Counter is O(n) single-pass, equivalent to the manual dict accumulation.
+    name_counts: Counter = Counter(
+        sanitize_field_name(f.get("label", f"field_{f.get('id', 0)}")) for f in fields
+    )
 
     properties: Dict[str, Any] = {}
     field_id_to_name: Dict[str, str] = {}
@@ -215,16 +216,19 @@ def build_metadata_for_dynamic_stream(
 # ---------------------------------------------------------------------------
 
 def _process_table(
-    client: Any, table: Dict[str, Any], default_app_id: str
+    client: Any, table: Dict[str, Any], app_name: str
 ) -> Optional[Tuple[str, Any, Any]]:
     """Fetch fields for one QB table and return ``(stream_name, schema, mdata)``.
 
     Returns ``None`` when the table should be skipped (missing id, API error,
     or no fields).
+
+    Args:
+        app_name: Human-readable app name (already fetched); used as the stream
+            name prefix (e.g. ``data_connector_management__connectors``).
     """
     table_id = table.get("id")
     table_name = table.get("name", table_id)
-    app_name = table.get("alias", "") or default_app_id
 
     if not table_id:
         LOGGER.warning("dynamic_schema: table entry has no 'id', skipping: %s", table)
@@ -317,10 +321,34 @@ def discover_dynamic_streams(client: Any) -> Tuple[Dict[str, Any], Dict[str, Any
     )
 
     # ------------------------------------------------------------------
-    # 2. For each table, list fields and build stream spec
+    # 2. Resolve human-readable app name for use as stream name prefix.
+    #    Prefer the app's display name over the raw app ID so streams are
+    #    readable, e.g. ``data_connector_management__connectors``.
+    # ------------------------------------------------------------------
+    app_name: str = app_id
+    try:
+        app_response = client.make_request(
+            "GET",
+            f"{client.base_url}/v1/apps/{app_id}",
+        )
+        app_name = (app_response or {}).get("name", "") or app_id
+    except Exception as err:  # pylint: disable=broad-except
+        LOGGER.warning(
+            "dynamic_schema: failed to fetch app name for '%s' – %s; "
+            "falling back to app ID as stream prefix",
+            app_id, err,
+        )
+
+    LOGGER.info(
+        "dynamic_schema: app='%s' using prefix '%s'",
+        app_id, app_name,
+    )
+
+    # ------------------------------------------------------------------
+    # 3. For each table, fetch fields and build stream spec.
     # ------------------------------------------------------------------
     for table in tables:
-        result = _process_table(client, table, app_id)
+        result = _process_table(client, table, app_name)
         if result is not None:
             stream_name, schema, mdata = result
             schemas[stream_name] = schema

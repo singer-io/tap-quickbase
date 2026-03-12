@@ -104,50 +104,52 @@ class QuickbaseBaseTest(BaseCase):
             },
             # ----------------------------------------------------------------
             # Dynamic streams – discovered at runtime from the QB application.
+            # Stream name format: <sanitized_app_name>__<sanitized_table_name>
+            # e.g. data_connector_management__connectors
             # Primary key = record_id (QB field 3, "Record ID#" → sanitized).
             # Replication key = date_modified (QB field 2) → INCREMENTAL.
             # ----------------------------------------------------------------
-            "_dbid_connectors__connectors": {
+            "data_connector_management__connectors": {
                 cls.PRIMARY_KEYS: {"record_id"},
                 cls.REPLICATION_METHOD: cls.INCREMENTAL,
                 cls.REPLICATION_KEYS: {"date_modified"},
                 cls.OBEYS_START_DATE: True,
-                cls.API_LIMIT: 10
+                cls.API_LIMIT: 5
             },
-            "_dbid_connector_versions__connector_versions": {
+            "data_connector_management__connector_versions": {
                 cls.PRIMARY_KEYS: {"record_id"},
                 cls.REPLICATION_METHOD: cls.INCREMENTAL,
                 cls.REPLICATION_KEYS: {"date_modified"},
                 cls.OBEYS_START_DATE: True,
-                cls.API_LIMIT: 10
+                cls.API_LIMIT: 5
             },
-            "_dbid_connector_logs__connector_logs": {
+            "data_connector_management__connector_logs": {
                 cls.PRIMARY_KEYS: {"record_id"},
                 cls.REPLICATION_METHOD: cls.INCREMENTAL,
                 cls.REPLICATION_KEYS: {"date_modified"},
                 cls.OBEYS_START_DATE: True,
-                cls.API_LIMIT: 10
+                cls.API_LIMIT: 5
             },
-            "_dbid_connector_performance__connector_performance": {
+            "data_connector_management__connector_performance": {
                 cls.PRIMARY_KEYS: {"record_id"},
                 cls.REPLICATION_METHOD: cls.INCREMENTAL,
                 cls.REPLICATION_KEYS: {"date_modified"},
                 cls.OBEYS_START_DATE: True,
-                cls.API_LIMIT: 10
+                cls.API_LIMIT: 5
             },
-            "_dbid_connector_performance_alerts__connector_performance_alerts": {
+            "data_connector_management__connector_performance_alerts": {
                 cls.PRIMARY_KEYS: {"record_id"},
                 cls.REPLICATION_METHOD: cls.INCREMENTAL,
                 cls.REPLICATION_KEYS: {"date_modified"},
                 cls.OBEYS_START_DATE: True,
-                cls.API_LIMIT: 10
+                cls.API_LIMIT: 5
             },
-            "_dbid_connector_log_attachments__connector_log_attachments": {
+            "data_connector_management__connector_log_attachments": {
                 cls.PRIMARY_KEYS: {"record_id"},
                 cls.REPLICATION_METHOD: cls.INCREMENTAL,
                 cls.REPLICATION_KEYS: {"date_modified"},
                 cls.OBEYS_START_DATE: True,
-                cls.API_LIMIT: 10
+                cls.API_LIMIT: 5
             },
         }
 

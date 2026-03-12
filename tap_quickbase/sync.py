@@ -24,7 +24,7 @@ LOGGER = singer.get_logger()
 def _is_dynamic_stream(catalog_entry: singer.catalog.CatalogEntry) -> bool:
     """Return *True* if the catalog entry represents a dynamic table stream."""
     mdata_map = metadata.to_map(catalog_entry.metadata)
-    return bool(mdata_map.get((), {}).get("tap-quickbase.is_dynamic"))
+    return bool(metadata.get(mdata_map, (), "tap-quickbase.is_dynamic"))
 
 
 def _build_stream(stream_name: str, client: Client,
