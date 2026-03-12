@@ -2,10 +2,7 @@
     "type": "object",
     "properties": {
         "tableId": {
-            "type": [
-                "null",
-                "string"
-            ]
+            "type": "string"
         },
         "description": {
             "type": [
@@ -14,10 +11,7 @@
             ]
         },
         "id": {
-            "type": [
-                "null",
-                "string"
-            ]
+            "type": "string"
         },
         "incomplete": {
             "type": [
@@ -32,7 +26,10 @@
             ]
         },
         "properties": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "barDataSources": {
                     "type": [
@@ -40,7 +37,10 @@
                         "array"
                     ],
                     "items": {
-                        "type": "object",
+                        "type": [
+                            "null",
+                            "object"
+                        ],
                         "properties": {
                             "aggregation": {
                                 "type": [
@@ -70,7 +70,10 @@
                     ]
                 },
                 "categories": {
-                    "type": "object",
+                    "type": [
+                        "null",
+                        "object"
+                    ],
                     "properties": {
                         "fieldId": {
                             "type": [
@@ -110,7 +113,10 @@
                         "array"
                     ],
                     "items": {
-                        "type": "object",
+                        "type": [
+                            "null",
+                            "object"
+                        ],
                         "properties": {
                             "aggregation": {
                                 "type": [
@@ -145,7 +151,10 @@
                         "array"
                     ],
                     "items": {
-                        "type": "object",
+                        "type": [
+                            "null",
+                            "object"
+                        ],
                         "properties": {
                             "by": {
                                 "type": [
@@ -165,7 +174,10 @@
             }
         },
         "query": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "filter": {
                     "type": [
@@ -179,7 +191,10 @@
                         "array"
                     ],
                     "items": {
-                        "type": "string"
+                        "type": [
+                            "null",
+                            "string"
+                        ]
                     }
                 },
                 "tableId": {

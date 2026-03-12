@@ -2,10 +2,7 @@
     "type": "object",
     "properties": {
         "tableId": {
-            "type": [
-                "null",
-                "string"
-            ]
+            "type": "string"
         },
         "childTableId": {
             "type": [
@@ -14,7 +11,10 @@
             ]
         },
         "foreignKeyField": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "id": {
                     "type": [
@@ -37,10 +37,7 @@
             }
         },
         "id": {
-            "type": [
-                "null",
-                "integer"
-            ]
+            "type": "integer"
         },
         "isCrossApp": {
             "type": [
@@ -54,7 +51,10 @@
                 "array"
             ],
             "items": {
-                "type": "object",
+                "type": [
+                    "null",
+                    "object"
+                ],
                 "properties": {
                     "id": {
                         "type": [
@@ -89,7 +89,10 @@
                 "array"
             ],
             "items": {
-                "type": "object",
+                "type": [
+                    "null",
+                    "object"
+                ],
                 "properties": {
                     "id": {
                         "type": [

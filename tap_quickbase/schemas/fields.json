@@ -2,16 +2,10 @@
     "type": "object",
     "properties": {
         "tableId": {
-            "type": [
-                "null",
-                "string"
-            ]
+            "type": "string"
         },
         "id": {
-            "type": [
-                "null",
-                "integer"
-            ]
+            "type": "integer"
         },
         "label": {
             "type": [
@@ -171,7 +165,10 @@
                 "array"
             ],
             "items": {
-                "type": "object",
+                "type": [
+                    "null",
+                    "object"
+                ],
                 "properties": {
                     "permissionType": {
                         "type": [

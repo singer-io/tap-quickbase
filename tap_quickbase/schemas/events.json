@@ -2,10 +2,7 @@
     "type": "object",
     "properties": {
         "id": {
-            "type": [
-                "null",
-                "string"
-            ]
+            "type": "string"
         },
         "type": {
             "type": [
@@ -14,7 +11,10 @@
             ]
         },
         "owner": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "email": {
                     "type": [

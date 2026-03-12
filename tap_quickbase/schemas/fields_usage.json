@@ -2,19 +2,16 @@
     "type": "object",
     "properties": {
         "tableId": {
-            "type": [
-                "null",
-                "string"
-            ]
+            "type": "string"
         },
         "id": {
-            "type": [
-                "null",
-                "integer"
-            ]
+            "type": "integer"
         },
         "actions": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "count": {
                     "type": [
@@ -25,7 +22,10 @@
             }
         },
         "appHomePages": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "count": {
                     "type": [
@@ -36,7 +36,10 @@
             }
         },
         "dashboards": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "count": {
                     "type": [
@@ -47,7 +50,10 @@
             }
         },
         "defaultReports": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "count": {
                     "type": [
@@ -58,7 +64,10 @@
             }
         },
         "exactForms": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "count": {
                     "type": [
@@ -69,7 +78,10 @@
             }
         },
         "fields": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "count": {
                     "type": [
@@ -80,7 +92,10 @@
             }
         },
         "forms": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "count": {
                     "type": [
@@ -91,7 +106,10 @@
             }
         },
         "notifications": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "count": {
                     "type": [
@@ -102,7 +120,10 @@
             }
         },
         "personalReports": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "count": {
                     "type": [
@@ -127,7 +148,10 @@
             }
         },
         "relationships": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "count": {
                     "type": [
@@ -138,7 +162,10 @@
             }
         },
         "reminders": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "count": {
                     "type": [
@@ -149,7 +176,10 @@
             }
         },
         "reports": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "count": {
                     "type": [
@@ -160,7 +190,10 @@
             }
         },
         "roles": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "count": {
                     "type": [
@@ -171,7 +204,10 @@
             }
         },
         "tableImports": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "count": {
                     "type": [
@@ -182,7 +218,10 @@
             }
         },
         "tableRules": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "count": {
                     "type": [
@@ -193,7 +232,10 @@
             }
         },
         "webhooks": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "count": {
                     "type": [
