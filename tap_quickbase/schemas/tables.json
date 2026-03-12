@@ -99,5 +99,6 @@
                 "string"
             ]
         }
-    }
+    },
+    "additionalProperties": false
 }

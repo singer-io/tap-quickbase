@@ -121,5 +121,6 @@
                 "string"
             ]
         }
-    }
+    },
+    "additionalProperties": false
 }

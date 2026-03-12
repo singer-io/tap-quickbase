@@ -209,5 +209,6 @@
             ],
             "format": "date-time"
         }
-    }
+    },
+    "additionalProperties": false
 }

@@ -203,5 +203,6 @@
                 }
             }
         }
-    }
+    },
+    "additionalProperties": false
 }

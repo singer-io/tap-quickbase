@@ -194,5 +194,6 @@
                 }
             }
         }
-    }
+    },
+    "additionalProperties": false
 }
