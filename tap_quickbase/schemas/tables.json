@@ -34,10 +34,7 @@
             ]
         },
         "id": {
-            "type": [
-                "null",
-                "string"
-            ]
+            "type": "string"
         },
         "nextRecordId": {
             "type": [
@@ -99,5 +96,6 @@
                 "string"
             ]
         }
-    }
+    },
+    "additionalProperties": true
 }
