@@ -86,7 +86,10 @@
             ]
         },
         "properties": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "primaryKey": {
                     "type": [
