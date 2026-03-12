@@ -113,7 +113,10 @@
             }
         },
         "pipelines": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "count": {
                     "type": [
