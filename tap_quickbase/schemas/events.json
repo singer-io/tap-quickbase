@@ -61,5 +61,5 @@
             ]
         }
     },
-    "additionalProperties": false
+    "additionalProperties": true
 }

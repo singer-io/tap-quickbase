@@ -207,5 +207,5 @@
             ]
         }
     },
-    "additionalProperties": false
+    "additionalProperties": true
 }
