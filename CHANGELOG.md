@@ -1,10 +1,13 @@
 # Changelog
 
 ## 3.0.0
-  * Add static streams implementation using streams-based architecture [#29](https://github.com/singer-io/tap-quickbase/pull/29)
+  * Fix dynamic stream discovery and sync [#38](https://github.com/singer-io/tap-quickbase/pull/38)
+
+## 2.1.0
+  * Add static stream discovery and sync [#29](https://github.com/singer-io/tap-quickbase/pull/29)
   * Upgrade to Python 3.12
   * Update dependencies: singer-python 6.3.0, backoff 2.2.1
-  * Add unit tests (201) and integration tests (7 suites covering all streams)
+  * Add unit and integration tests
 
 ## 2.0.3
   * Adds a proper circleci config; makes pylint happy; bump library versions [#27](https://github.com/singer-io/tap-quickbase/pull/27)

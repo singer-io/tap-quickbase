@@ -11,7 +11,7 @@ setup(name="tap-quickbase",
       classifiers=["Programming Language :: Python :: 3 :: Only"],
       py_modules=["tap_quickbase"],
       install_requires=[
-        "singer-python==6.3.0",
+        "singer-python==6.8.0",
         "requests==2.32.5",
         "backoff==2.2.1",
         "parameterized==0.9.0"
