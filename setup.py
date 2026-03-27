@@ -4,14 +4,14 @@ from setuptools import setup, find_packages
 
 
 setup(name="tap-quickbase",
-      version="2.1.1",
+      version="3.0.0",
       description="Singer.io tap for extracting data from Quickbase API",
       author="Stitch",
       url="http://singer.io",
       classifiers=["Programming Language :: Python :: 3 :: Only"],
       py_modules=["tap_quickbase"],
       install_requires=[
-        "singer-python==6.3.0",
+        "singer-python==6.8.0",
         "requests==2.32.5",
         "backoff==2.2.1",
         "parameterized==0.9.0"

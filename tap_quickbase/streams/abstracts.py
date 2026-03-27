@@ -194,7 +194,7 @@ class BaseStream(ABC):
         """Interacts with api client interaction and pagination."""
         # Initialize pagination state
         state = {
-            'page_size': self.client.config.get("page_size", DEFAULT_PAGE_SIZE),
+            'page_size': int(self.client.config.get("page_size", DEFAULT_PAGE_SIZE)),
             'skip': 0,
             'iteration': 0,
             'seen_ids': set(),

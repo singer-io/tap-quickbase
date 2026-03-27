@@ -101,7 +101,56 @@ class QuickbaseBaseTest(BaseCase):
                 cls.REPLICATION_KEYS: set(),
                 cls.OBEYS_START_DATE: False,
                 cls.API_LIMIT: 100
-            }
+            },
+            # ----------------------------------------------------------------
+            # Dynamic streams – discovered at runtime from the QB application.
+            # Stream name format: <sanitized_app_name>__<sanitized_table_name>
+            # e.g. data_connector_management__connectors
+            # Primary key = record_id (QB field 3, "Record ID#" → sanitized).
+            # Replication key = date_modified (QB field 2) → INCREMENTAL.
+            # ----------------------------------------------------------------
+            "data_connector_management__connectors": {
+                cls.PRIMARY_KEYS: {"record_id"},
+                cls.REPLICATION_METHOD: cls.INCREMENTAL,
+                cls.REPLICATION_KEYS: {"date_modified"},
+                cls.OBEYS_START_DATE: True,
+                cls.API_LIMIT: 5
+            },
+            "data_connector_management__connector_versions": {
+                cls.PRIMARY_KEYS: {"record_id"},
+                cls.REPLICATION_METHOD: cls.INCREMENTAL,
+                cls.REPLICATION_KEYS: {"date_modified"},
+                cls.OBEYS_START_DATE: True,
+                cls.API_LIMIT: 5
+            },
+            "data_connector_management__connector_logs": {
+                cls.PRIMARY_KEYS: {"record_id"},
+                cls.REPLICATION_METHOD: cls.INCREMENTAL,
+                cls.REPLICATION_KEYS: {"date_modified"},
+                cls.OBEYS_START_DATE: True,
+                cls.API_LIMIT: 5
+            },
+            "data_connector_management__connector_performance": {
+                cls.PRIMARY_KEYS: {"record_id"},
+                cls.REPLICATION_METHOD: cls.INCREMENTAL,
+                cls.REPLICATION_KEYS: {"date_modified"},
+                cls.OBEYS_START_DATE: True,
+                cls.API_LIMIT: 5
+            },
+            "data_connector_management__connector_performance_alerts": {
+                cls.PRIMARY_KEYS: {"record_id"},
+                cls.REPLICATION_METHOD: cls.INCREMENTAL,
+                cls.REPLICATION_KEYS: {"date_modified"},
+                cls.OBEYS_START_DATE: True,
+                cls.API_LIMIT: 5
+            },
+            "data_connector_management__connector_log_attachments": {
+                cls.PRIMARY_KEYS: {"record_id"},
+                cls.REPLICATION_METHOD: cls.INCREMENTAL,
+                cls.REPLICATION_KEYS: {"date_modified"},
+                cls.OBEYS_START_DATE: True,
+                cls.API_LIMIT: 5
+            },
         }
 
     @staticmethod
