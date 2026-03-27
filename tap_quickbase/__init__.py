@@ -4,20 +4,18 @@ import sys
 import json
 import singer
 from tap_quickbase.client import Client
-from tap_quickbase.discover import discover
-from tap_quickbase.sync import sync
+import tap_quickbase.discover as _discover_mod
+import tap_quickbase.sync as _sync_mod
 
 LOGGER = singer.get_logger()
 
 REQUIRED_CONFIG_KEYS = ['qb_user_token', 'qb_appid', 'qb_url', 'start_date']
 
 
-def do_discover():
-    """
-    Discover and emit the catalog to stdout
-    """
+def do_discover(client: Client) -> None:
+    """Discover and emit the catalog (static + dynamic streams) to stdout."""
     LOGGER.info("Starting discover")
-    catalog = discover()
+    catalog = _discover_mod.discover(client=client)
     json.dump(catalog.to_dict(), sys.stdout, indent=2)
     LOGGER.info("Finished discover")
 
@@ -34,9 +32,9 @@ def main():
 
     with Client(parsed_args.config) as client:
         if parsed_args.discover:
-            do_discover()
+            do_discover(client)
         elif parsed_args.catalog:
-            sync(
+            _sync_mod.sync(
                 client=client,
                 config=parsed_args.config,
                 catalog=parsed_args.catalog,

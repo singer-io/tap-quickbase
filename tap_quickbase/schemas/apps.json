@@ -33,7 +33,10 @@
             ]
         },
         "memoryInfo": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "estMemory": {
                     "type": [
@@ -50,10 +53,7 @@
             }
         },
         "id": {
-            "type": [
-                "null",
-                "string"
-            ]
+            "type": "string"
         },
         "name": {
             "type": [
@@ -62,7 +62,10 @@
             ]
         },
         "securityProperties": {
-            "type": "object",
+            "type": [
+                "null",
+                "object"
+            ],
             "properties": {
                 "allowClone": {
                     "type": [
@@ -121,5 +124,6 @@
                 "string"
             ]
         }
-    }
+    },
+    "additionalProperties": true
 }
