@@ -1,6 +1,14 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from tap_quickbase.sync import setup_children, sync, update_currently_syncing
+from singer.catalog import CatalogEntry, Schema
+from singer import metadata
+from tap_quickbase.sync import (
+    setup_children,
+    sync,
+    update_currently_syncing,
+    _is_dynamic_stream,
+    _build_stream,
+)
 
 class TestSync(unittest.TestCase):
 
@@ -175,3 +183,107 @@ class TestSync(unittest.TestCase):
         mock_set_currently_syncing.assert_called_once_with(state, "new_stream")
         mock_write_state.assert_called_once_with(state)
         self.assertNotIn("currently_syncing", state) 
+
+
+# ---------------------------------------------------------------------------
+# Helpers: _is_dynamic_stream
+# ---------------------------------------------------------------------------
+
+def _make_catalog_entry(is_dynamic: bool) -> CatalogEntry:
+    """Build a minimal CatalogEntry with or without the is_dynamic flag."""
+    mdata = [{"breadcrumb": [], "metadata": {}}]
+    if is_dynamic:
+        mdata[0]["metadata"]["tap-quickbase.is_dynamic"] = True
+    return CatalogEntry(
+        stream="test_stream",
+        tap_stream_id="test_stream",
+        key_properties=["id"],
+        schema=Schema.from_dict({"type": "object", "properties": {}}),
+        metadata=mdata,
+    )
+
+
+class TestIsDynamicStream(unittest.TestCase):
+    """Unit tests for the _is_dynamic_stream helper."""
+
+    def test_dynamic_flag_true_returns_true(self):
+        entry = _make_catalog_entry(is_dynamic=True)
+        self.assertTrue(_is_dynamic_stream(entry))
+
+    def test_no_dynamic_flag_returns_false(self):
+        entry = _make_catalog_entry(is_dynamic=False)
+        self.assertFalse(_is_dynamic_stream(entry))
+
+    def test_empty_metadata_returns_false(self):
+        entry = CatalogEntry(
+            stream="empty",
+            tap_stream_id="empty",
+            key_properties=[],
+            schema=Schema.from_dict({"type": "object"}),
+            metadata=[],
+        )
+        self.assertFalse(_is_dynamic_stream(entry))
+
+    def test_dynamic_flag_false_returns_false(self):
+        """Explicit False value for the flag must not be treated as True."""
+        mdata = [{"breadcrumb": [], "metadata": {"tap-quickbase.is_dynamic": False}}]
+        entry = CatalogEntry(
+            stream="s",
+            tap_stream_id="s",
+            key_properties=[],
+            schema=Schema.from_dict({"type": "object"}),
+            metadata=mdata,
+        )
+        self.assertFalse(_is_dynamic_stream(entry))
+
+
+# ---------------------------------------------------------------------------
+# Helpers: _build_stream
+# ---------------------------------------------------------------------------
+
+class TestBuildStream(unittest.TestCase):
+    """Unit tests for the _build_stream routing helper."""
+
+    def _make_catalog(self, is_dynamic: bool, stream_name: str = "test_stream"):
+        catalog = MagicMock()
+        catalog.get_stream.return_value = _make_catalog_entry(is_dynamic)
+        return catalog
+
+    @patch("tap_quickbase.sync.STREAMS")
+    def test_static_stream_uses_streams_registry(self, mock_streams):
+        """A static entry (no is_dynamic flag) must be looked up in STREAMS."""
+        mock_cls = MagicMock()
+        mock_streams.__getitem__ = MagicMock(return_value=mock_cls)
+
+        client = MagicMock()
+        catalog = self._make_catalog(is_dynamic=False)
+        _build_stream("test_stream", client, catalog)
+
+        mock_streams.__getitem__.assert_called_once_with("test_stream")
+        mock_cls.assert_called_once()
+
+    @patch("tap_quickbase.sync.DynamicTableStream")
+    def test_dynamic_stream_uses_dynamic_class(self, mock_dynamic_cls):
+        """A dynamic entry must be instantiated as DynamicTableStream."""
+        client = MagicMock()
+        catalog = self._make_catalog(is_dynamic=True)
+        _build_stream("test_stream", client, catalog)
+
+        mock_dynamic_cls.assert_called_once()
+        # First positional arg should be the client
+        args = mock_dynamic_cls.call_args[0]
+        self.assertEqual(args[0], client)
+
+    @patch("tap_quickbase.sync.DynamicTableStream")
+    @patch("tap_quickbase.sync.STREAMS")
+    def test_unknown_static_stream_falls_back_to_dynamic(
+        self, mock_streams, mock_dynamic_cls
+    ):
+        """If STREAMS raises KeyError the stream falls back to DynamicTableStream."""
+        mock_streams.__getitem__ = MagicMock(side_effect=KeyError("unknown"))
+
+        client = MagicMock()
+        catalog = self._make_catalog(is_dynamic=False)
+        _build_stream("unknown_stream", client, catalog)
+
+        mock_dynamic_cls.assert_called_once()
