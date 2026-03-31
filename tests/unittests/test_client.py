@@ -13,10 +13,8 @@ from tap_quickbase.exceptions import (
     QuickbaseConflictError,
     QuickbaseUnprocessableEntityError,
     QuickbaseRateLimitError,
-    QuickbaseInternalServerError,
-    QuickbaseNotImplementedError,
-    QuickbaseBadGatewayError,
-    QuickbaseServiceUnavailableError
+    QuickbaseBackoffError,
+    QuickbaseError
 )
 
 
@@ -146,6 +144,26 @@ class TestErrorHandling(unittest.TestCase):
             self.assertEqual(mock_request.call_count, 1)
             self.assertIn(error_message, str(context.exception))
 
+    @parameterized.expand([
+        ["418", 418],
+        ["451", 451],
+    ])
+    def test_unmapped_non_5xx_errors_no_retry(self, name, status_code):
+        """Test unmapped non-5xx error codes raise QuickbaseError and are NOT retried."""
+        mock_response = MagicMock()
+        mock_response.status_code = status_code
+        mock_response.json.return_value = {}
+
+        with patch.object(self.client._session, "request", return_value=mock_response) as mock_request:
+            with self.assertRaises(QuickbaseError) as context:
+                self.client._Client__make_request("GET", "https://api.quickbase.com/test")
+
+            # Should only try once (no retry)
+            self.assertEqual(mock_request.call_count, 1)
+            # Should not be a backoff error subclass
+            self.assertNotIsInstance(context.exception, QuickbaseBackoffError)
+            self.assertIn(str(status_code), str(context.exception))
+
 
 class TestBackoffAndRetry(unittest.TestCase):
     """Test backoff and retry mechanism."""
@@ -158,10 +176,6 @@ class TestBackoffAndRetry(unittest.TestCase):
     @parameterized.expand([
         ["422", 422, QuickbaseUnprocessableEntityError],
         ["429", 429, QuickbaseRateLimitError],
-        ["500", 500, QuickbaseInternalServerError],
-        ["501", 501, QuickbaseNotImplementedError],
-        ["502", 502, QuickbaseBadGatewayError],
-        ["503", 503, QuickbaseServiceUnavailableError],
     ])
     @patch("time.sleep")
     def test_retriable_http_errors_retry(self, name, status_code, exception_class, mock_sleep):
@@ -178,6 +192,24 @@ class TestBackoffAndRetry(unittest.TestCase):
             self.assertEqual(mock_request.call_count, 5)
             # Should call sleep for backoff between retries
             self.assertTrue(mock_sleep.call_count >= 4)
+
+    @parameterized.expand([
+        ["500", 500],
+        ["599", 599],
+    ])
+    @patch("time.sleep")
+    def test_5xx_errors_retry(self, name, status_code, mock_sleep):
+        """Test all 5xx status codes raise QuickbaseBackoffError and retry."""
+        mock_response = MagicMock()
+        mock_response.status_code = status_code
+        mock_response.json.return_value = {}
+
+        with patch.object(self.client._session, "request", return_value=mock_response) as mock_request:
+            with self.assertRaises(QuickbaseBackoffError):
+                self.client._Client__make_request("GET", "https://api.quickbase.com/test")
+
+            # Should retry 5 times
+            self.assertEqual(mock_request.call_count, 5)
 
     @parameterized.expand([
         ["connection_reset", ConnectionResetError],

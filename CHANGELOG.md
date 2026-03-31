@@ -2,6 +2,7 @@
 
 ## 3.0.0
   * Fix dynamic stream discovery and sync [#38](https://github.com/singer-io/tap-quickbase/pull/38)
+  * Improved 5xx error handling [37](https://github.com/singer-io/tap-quickbase/pull/37)
 
 ## 2.1.0
   * Add static stream discovery and sync [#29](https://github.com/singer-io/tap-quickbase/pull/29)
