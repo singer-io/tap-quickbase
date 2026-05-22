@@ -14,10 +14,10 @@ setup(name="tap-quickbase",
         "singer-python==6.8.0",
         "requests==2.32.5",
         "backoff==2.2.1",
-        "parameterized==0.9.0"
       ],
       extras_require={
         "dev": [
+          "parameterized==0.9.0",
           "pytest",
           "coverage"
         ]
