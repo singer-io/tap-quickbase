@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.0.1
+  * Bump requests to 2.33.0 for security updates [#41](https://github.com/singer-io/tap-quickbase/pull/41)
+
+
 ## 3.0.0
   * Fix dynamic stream discovery and sync [#38](https://github.com/singer-io/tap-quickbase/pull/38)
   * Improved 5xx error handling [37](https://github.com/singer-io/tap-quickbase/pull/37)
