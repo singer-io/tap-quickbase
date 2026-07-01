@@ -15,6 +15,7 @@ REQUIRED_CONFIG_KEYS = ['qb_user_token', 'qb_appid', 'qb_url', 'start_date']
 def do_discover(client: Client) -> None:
     """Discover and emit the catalog (static + dynamic streams) to stdout."""
     LOGGER.info("Starting discover")
+    client.do_authorization_check()
     catalog = _discover_mod.discover(client=client)
     json.dump(catalog.to_dict(), sys.stdout, indent=2)
     LOGGER.info("Finished discover")
