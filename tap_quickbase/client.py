@@ -90,14 +90,16 @@ class Client:
     def do_authorization_check(self) -> None:
         """Validate the configured credentials before discovery.
 
-        Makes a lightweight authenticated request to the QB REST API so that
-        connection creation fails fast when the user token, realm hostname or
-        app ID are invalid, instead of silently succeeding with only static
-        streams. Any authorization/HTTP error raised here is propagated to the
-        caller.
+        Makes the same lightweight ``GET /v1/tables?appId=`` request that
+        discovery relies on, so that connection creation fails fast when the
+        user token, realm hostname or app ID are invalid, instead of silently
+        succeeding with only static streams. Any authorization/HTTP error
+        raised here is propagated to the caller.
         """
         app_id = self.config.get("qb_appid")
-        self.make_request("GET", f"{self.base_url}/v1/apps/{app_id}")
+        self.make_request(
+            "GET", f"{self.base_url}/v1/tables", params={"appId": app_id}
+        )
 
     def authenticate(self, headers: Dict, params: Dict) -> Tuple[Dict, Dict]:
         """Authenticates the request with the token"""

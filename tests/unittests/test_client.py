@@ -263,11 +263,11 @@ class TestAuthorizationCheck(unittest.TestCase):
         self.client = Client(self.config)
 
     def test_authorization_check_calls_apps_endpoint(self):
-        """Valid creds: a lightweight request to the apps endpoint is made."""
-        with patch.object(self.client, "make_request", return_value={"name": "App"}) as mock_request:
+        """Valid creds: a lightweight request to the tables endpoint is made."""
+        with patch.object(self.client, "make_request", return_value=[]) as mock_request:
             self.client.do_authorization_check()
             mock_request.assert_called_once_with(
-                "GET", "https://api.quickbase.com/v1/apps/abc123"
+                "GET", "https://api.quickbase.com/v1/tables", params={"appId": "abc123"}
             )
 
     def test_authorization_check_propagates_error(self):
