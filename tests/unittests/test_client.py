@@ -248,3 +248,32 @@ class TestBackoffAndRetry(unittest.TestCase):
             
             self.assertEqual(result, {"data": "success"})
             self.assertEqual(mock_request.call_count, 3)
+
+
+class TestAuthorizationCheck(unittest.TestCase):
+    """Test the discovery-time authorization check."""
+
+    def setUp(self):
+        """Common setup."""
+        self.config = {
+            "qb_user_token": "test_token",
+            "qb_url": "https://mycompany.quickbase.com",
+            "qb_appid": "abc123",
+        }
+        self.client = Client(self.config)
+
+    def test_authorization_check_calls_apps_endpoint(self):
+        """Valid creds: a lightweight request to the tables endpoint is made."""
+        with patch.object(self.client, "make_request", return_value=[]) as mock_request:
+            self.client.do_authorization_check()
+            mock_request.assert_called_once_with(
+                "GET", "https://api.quickbase.com/v1/tables", params={"appId": "abc123"}
+            )
+
+    def test_authorization_check_propagates_error(self):
+        """Invalid creds: the underlying error is raised, failing discovery."""
+        with patch.object(
+            self.client, "make_request", side_effect=QuickbaseUnauthorizedError("bad token")
+        ):
+            with self.assertRaises(QuickbaseUnauthorizedError):
+                self.client.do_authorization_check()

@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.0.2
+  * Fail discovery with invalid credentials by adding an authorization check [#42](https://github.com/singer-io/tap-quickbase/pull/42)
+
 # 3.0.1
   * Bump requests to 2.33.0 for security updates [#41](https://github.com/singer-io/tap-quickbase/pull/41)
 
